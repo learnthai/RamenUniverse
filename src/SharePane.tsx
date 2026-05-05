@@ -115,7 +115,7 @@ export function SharePane() {
       const resJson = await res.json();
       if (resJson.shorturl) {
         navigator.clipboard.writeText(resJson.shorturl);
-        showToast('已複製縮短後的純頁面連結！');
+        showToast('已複製縮短後的頁面連結！');
       } else {
         navigator.clipboard.writeText(url);
         showToast('短網址服務暫時失效，已複製完整連結！');
@@ -129,7 +129,7 @@ export function SharePane() {
     <div className="pane on" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className={`toast ${toastMsg ? 'on' : ''}`}>{toastMsg}</div>
       <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
-        <h3 style={{ margin: '0 0 15px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', textAlign: 'left', lineHeight: '25px' }}>篩選條件</h3>
+        <h3 style={{ margin: '0 0 15px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', textAlign: 'left', lineHeight: '26px' }}>篩選條件</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
@@ -166,8 +166,8 @@ export function SharePane() {
         </div>
       </div>
 
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', margin: '0 16px 16px 20px' }}>
-        <h3 style={{ margin: '0 0 16px 0', padding: '0', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>預覽匯出結果</h3>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
+        <h3 style={{ margin: '0 0 16px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', lineHeight: '25px' }}>預覽匯出結果</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {exportData.length === 0 ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#888', background: '#f0f0f0', borderRadius: 8 }}>沒找到符合條件的拉麵店。</div>
@@ -189,6 +189,11 @@ export function SharePane() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 13, border: '1px solid #f5b7b1', lineHeight: '26px' }}>吃過 {item.visits.length} 次</div>
                       )}
                     </div>
+                    {((filterType === 'visited' && item.visits?.[item.visits.length - 1]?.comment) || item.comment) && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: '#666', background: '#f9f9f9', padding: '6px 8px', borderRadius: 6, borderLeft: '3px solid #eee' }}>
+                        💬 {filterType === 'visited' ? item.visits![item.visits!.length - 1].comment : item.comment}
+                      </div>
+                    )}
                 </div>
               ))}
             </div>
@@ -196,17 +201,17 @@ export function SharePane() {
         </div>
       </div>
 
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', margin: '0 16px 0 30px' }}>
-        <h3 style={{ margin: '0 0 16px -35px', padding: '0', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>決定匯出格式</h3>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
+        <h3 style={{ margin: '0 0 16px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', lineHeight: '25px' }}>決定匯出格式</h3>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#e4c111', marginLeft: -40 }} onClick={handleExportJPG}>
+          <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#e4c111' }} onClick={handleExportJPG}>
             JPG 圖片
           </button>
           <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#c87cf9' }} onClick={handleExportPDF}>
             PDF 文件
           </button>
           <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#2A6040' }} onClick={handleExportLink}>
-            純頁面連結
+            頁面連結
           </button>
         </div>
       </div>
@@ -247,6 +252,11 @@ export function SharePane() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: '#ffefef', color: '#d92c2c', borderRadius: 14, border: '1px solid #f5b7b1', lineHeight: '28px' }}>吃過 {item.visits.length} 次</div>
                       )}
                     </div>
+                    {((filterType === 'visited' && item.visits?.[item.visits.length - 1]?.comment) || item.comment) && (
+                      <div style={{ marginTop: 10, fontSize: 13, color: '#555', background: '#f5f5f5', padding: '8px 12px', borderRadius: 8, borderLeft: '4px solid #ddd' }}>
+                        💬 {filterType === 'visited' ? item.visits![item.visits!.length - 1].comment : item.comment}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
