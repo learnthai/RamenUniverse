@@ -63,7 +63,7 @@ const STATION_COORDS: Record<string, { x: number; y: number; lines: string[] }> 
     ]
   },
   "北車": {
-    x: 41.1,
+    x: 40.1,
     y: 58.1,
     lines: [
       "red",
@@ -174,8 +174,8 @@ const STATION_COORDS: Record<string, { x: number; y: number; lines: string[] }> 
     ]
   },
   "新埔": {
-    x: 24,
-    y: 67.5,
+    x: 21,
+    y: 65.8,
     lines: [
       "blue"
     ]
@@ -579,6 +579,26 @@ const STATION_COORDS: Record<string, { x: number; y: number; lines: string[] }> 
     lines: [
       "purple"
     ]
+  },
+  "敦化or": {
+    x: 50,
+    y: 50,
+    lines: []
+  },
+  "國父紀念館站🤏🏾": {
+    x: 50,
+    y: 50,
+    lines: []
+  },
+  "可嘗試一次": {
+    x: 50,
+    y: 50,
+    lines: []
+  },
+  "本店（北車）": {
+    x: 42.6,
+    y: 58.2,
+    lines: []
   }
 };
 
@@ -718,7 +738,7 @@ export const MapPane = () => {
           <button 
             className={`fbtn ${editMode ? 'on' : ''}`}
             onClick={() => setEditMode(!editMode)}
-            style={{ marginLeft: 'auto', outline: '2px solid red' }}
+            style={{ marginLeft: 'auto' }}
           >
             🔧 編輯座標
           </button>
@@ -728,8 +748,8 @@ export const MapPane = () => {
       <div style={{ flex: 1, position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#eef1f4', border: 'var(--bdr)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, position: 'relative' }}>
         <TransformWrapper
-          initialScale={2}
-          minScale={0.5}
+          initialScale={1}
+          minScale={0.1}
           maxScale={8}
           limitToBounds={false}
           centerOnInit={true}
@@ -742,15 +762,10 @@ export const MapPane = () => {
 
             return (
               <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
-                {/* 
-                  Instead of width: 100% and aspect ratio, we can use a wide base layout.
-                  Or keep width: 100% and 16/9 ratio, but we MUST remove objectFit: 'contain'
-                  so the image strictly fills the 16:9 container, perfectly aligning with percentage coordinates.
-                */}
-                <div style={{ position: 'relative', width: 2000 }}>
+                <div style={{ position: 'relative', width: 1200, maxWidth: 'none' }}>
                     <img 
                       ref={imgRef}
-                      src="/metro.png" 
+                      src="metro.png" 
                       alt="Taipei Metro Map" 
                       style={{ width: '100%', height: 'auto', display: 'block', cursor: editMode && clickedStation ? 'crosshair' : 'default' }}
                       onPointerDown={(e) => { 
@@ -815,12 +830,12 @@ export const MapPane = () => {
                         setClickedStation(stationName === clickedStation ? null : stationName);
                       }}
                       style={{
-                        backgroundColor: hasVisited ? 'var(--green)' : 'var(--red)',
+                        backgroundColor: (editMode && isSelected) ? '#FFD700' : (hasVisited ? 'var(--green)' : 'var(--red)'),
                         color: '#fff',
                         width: isSelected ? 28 : 22,
                         height: isSelected ? 28 : 22,
                         borderRadius: '50%',
-                        border: editMode && isSelected ? '3px solid #ff00ff' : '3px solid #fff',
+                        border: (editMode && isSelected) ? 'none' : '3px solid #fff',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                         display: 'flex',
                         alignItems: 'center',

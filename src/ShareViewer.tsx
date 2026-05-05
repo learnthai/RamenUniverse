@@ -19,7 +19,7 @@ export function ShareViewer({ dataString, onClose }: { dataString: string; onClo
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#fcfcfc', zIndex: 9999, overflowY: 'auto', padding: 24, paddingBottom: 64 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <button onClick={() => window.location.href = '/'} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 20, fontWeight: 'bold', cursor: 'pointer' }}>
+        <button onClick={() => window.location.href = '/'} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 30, fontWeight: 'bold', cursor: 'pointer', fontSize: 16, boxShadow: 'var(--shadow-sm)' }}>
           查看其他拉麵清單
         </button>
       </div>
@@ -39,11 +39,11 @@ export function ShareViewer({ dataString, onClose }: { dataString: string; onClo
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.s}</div>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.sp}</div>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.f}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 14, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '28px' }}>🚇 {item.s}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 14, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '28px' }}>{item.sp}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 14, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '28px' }}>{item.f}</div>
               {data.list === 'visited' && item.v !== undefined && (
-                <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 12, lineHeight: '1.2' }}>吃過 {item.v} 次</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: '#ffefef', color: '#d92c2c', borderRadius: 14, border: '1px solid #f5b7b1', lineHeight: '28px' }}>吃過 {item.v} 次</div>
               )}
             </div>
           </div>

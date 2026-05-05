@@ -129,10 +129,10 @@ export function SharePane() {
     <div className="pane on" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className={`toast ${toastMsg ? 'on' : ''}`}>{toastMsg}</div>
       <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
-        <h3 style={{ margin: '0 50px 15px 135px', padding: '0 0 0 1px', fontSize: 18, fontWeight: 700, color: '#C8442A', textAlign: 'left', lineHeight: '25px' }}>篩選條件</h3>
+        <h3 style={{ margin: '0 0 15px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', textAlign: 'left', lineHeight: '25px' }}>篩選條件</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>來源類別</span>
             <div className="fchips" style={{ margin: 0 }}>
               <div className={`fchip ${filterType === 'wish' ? 'on c-wish' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilterType('wish')}>想去清單 ({state.wish.length})</div>
@@ -140,25 +140,25 @@ export function SharePane() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3, marginTop: 2 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>捷運站</span>
-            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1px solid #ccc', borderRadius: 5 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
+            <select className="inp" style={{ flex: 1, padding: '8px 12px 8px 12px', border: '1.5px solid var(--gray-mid)', borderRadius: 5, background: '#fff', marginLeft: 0, marginRight: 30 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
               <option value="all">全部捷運站</option>
               {uniqueStations.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>湯系</span>
-            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1px solid #ccc', borderRadius: 5 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
+            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-mid)', borderRadius: 5, background: '#fff', marginRight: 30 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
               <option value="all">全部湯系</option>
               {uniqueSoups.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>調味</span>
-            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1px solid #ccc', borderRadius: 5 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
+            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-mid)', borderRadius: 5, background: '#fff', marginRight: 30 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
               <option value="all">全部調味</option>
               {uniqueFlavors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -166,8 +166,8 @@ export function SharePane() {
         </div>
       </div>
 
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', marginLeft: 20 }}>
-        <h3 style={{ margin: '0 0 16px -50px', padding: '0 0 0 1px', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>預覽匯出結果</h3>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', margin: '0 16px 16px 20px' }}>
+        <h3 style={{ margin: '0 0 16px 0', padding: '0', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>預覽匯出結果</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {exportData.length === 0 ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#888', background: '#f0f0f0', borderRadius: 8 }}>沒找到符合條件的拉麵店。</div>
@@ -181,14 +181,14 @@ export function SharePane() {
                       <span style={{ fontSize: 14, fontWeight: 'normal', color: '#d92c2c' }}>★ {(item.visits.reduce((acc: number, cur: any) => acc + (cur.rating || 0), 0) / item.visits.length).toFixed(1)}</span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, fontSize: 12, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.station}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.style}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.season}</div>
-                    {filterType === 'visited' && item.visits && (
-                      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 12, lineHeight: '1.2' }}>吃過 {item.visits.length} 次</div>
-                    )}
-                  </div>
+                    <div style={{ display: 'flex', gap: 6, fontSize: 12, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px' }}>🚇 {item.station}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 13, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '26px' }}>{item.style}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 13, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '26px' }}>{item.season}</div>
+                      {filterType === 'visited' && item.visits && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 13, border: '1px solid #f5b7b1', lineHeight: '26px' }}>吃過 {item.visits.length} 次</div>
+                      )}
+                    </div>
                 </div>
               ))}
             </div>
@@ -196,10 +196,10 @@ export function SharePane() {
         </div>
       </div>
 
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', marginLeft: 20 }}>
-        <h3 style={{ margin: '0 0 16px -50px', padding: '0 0 0 1px', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>決定匯出格式</h3>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', margin: '0 16px 0 30px' }}>
+        <h3 style={{ margin: '0 0 16px -35px', padding: '0', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>決定匯出格式</h3>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#e4c111', marginLeft: -30 }} onClick={handleExportJPG}>
+          <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#e4c111', marginLeft: -40 }} onClick={handleExportJPG}>
             JPG 圖片
           </button>
           <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#c87cf9' }} onClick={handleExportPDF}>
@@ -240,11 +240,11 @@ export function SharePane() {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.station}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.style}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#e0e0e0', borderRadius: 12, lineHeight: '1.2' }}>{item.season}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 14, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '28px' }}>🚇 {item.station}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 14, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '28px' }}>{item.style}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 14, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '28px' }}>{item.season}</div>
                       {filterType === 'visited' && item.visits && (
-                        <div style={{ display: 'flex', alignItems: 'center', padding: '4px 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 12, lineHeight: '1.2' }}>吃過 {item.visits.length} 次</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: '#ffefef', color: '#d92c2c', borderRadius: 14, border: '1px solid #f5b7b1', lineHeight: '28px' }}>吃過 {item.visits.length} 次</div>
                       )}
                     </div>
                   </div>
