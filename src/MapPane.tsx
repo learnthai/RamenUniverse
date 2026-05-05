@@ -738,10 +738,7 @@ export const MapPane = () => {
           <button 
             className={`fbtn ${editMode ? 'on' : ''}`}
             onClick={() => setEditMode(!editMode)}
-            style={{ 
-              marginLeft: 'auto',
-              ...(editMode ? { backgroundColor: 'var(--blue)', color: '#fff', borderColor: 'var(--blue)' } : {})
-            }}
+            style={{ marginLeft: 'auto' }}
           >
             🔧 編輯座標
           </button>
