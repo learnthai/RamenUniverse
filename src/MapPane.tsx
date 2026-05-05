@@ -738,7 +738,10 @@ export const MapPane = () => {
           <button 
             className={`fbtn ${editMode ? 'on' : ''}`}
             onClick={() => setEditMode(!editMode)}
-            style={{ marginLeft: 'auto' }}
+            style={{ 
+              marginLeft: 'auto',
+              ...(editMode ? { backgroundColor: 'var(--blue)', color: '#fff', borderColor: 'var(--blue)' } : {})
+            }}
           >
             🔧 編輯座標
           </button>
@@ -765,7 +768,7 @@ export const MapPane = () => {
                 <div style={{ position: 'relative', width: 1200, maxWidth: 'none' }}>
                     <img 
                       ref={imgRef}
-                      src="metro.png" 
+                      src="/metro.png" 
                       alt="Taipei Metro Map" 
                       style={{ width: '100%', height: 'auto', display: 'block', cursor: editMode && clickedStation ? 'crosshair' : 'default' }}
                       onPointerDown={(e) => { 

@@ -181,14 +181,14 @@ export function SharePane() {
                       <span style={{ fontSize: 14, fontWeight: 'normal', color: '#d92c2c' }}>★ {(item.visits.reduce((acc: number, cur: any) => acc + (cur.rating || 0), 0) / item.visits.length).toFixed(1)}</span>
                     )}
                   </div>
-                    <div style={{ display: 'flex', gap: 6, fontSize: 12, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px' }}>🚇 {item.station}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 13, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '26px' }}>{item.style}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 13, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '26px' }}>{item.season}</div>
-                      {filterType === 'visited' && item.visits && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 13, border: '1px solid #f5b7b1', lineHeight: '26px' }}>吃過 {item.visits.length} 次</div>
-                      )}
-                    </div>
+                      <div style={{ display: 'flex', gap: 6, fontSize: 12, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px' }}>🚇 {item.station}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 13, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '26px' }}>{item.style}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 13, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '26px' }}>{item.season}</div>
+                        {filterType === 'visited' && item.visits && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 13, border: '1px solid #f5b7b1', lineHeight: '26px' }}>吃過 {item.visits.length} 次</div>
+                        )}
+                      </div>
                 </div>
               ))}
             </div>
