@@ -18,14 +18,26 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
 
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [longPressActive, setLongPressActive] = useState<number | null>(null);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPos = useRef<{ x: number, y: number } | null>(null);
 
-  const dragNode = useRef<HTMLDivElement | null>(null);
-
-  const handleDragStart = (e: React.DragEvent | React.TouchEvent, idx: number) => {
+  const startDrag = (idx: number) => {
     setDraggingIdx(idx);
-    if ('dataTransfer' in e) {
-       e.dataTransfer.effectAllowed = 'move';
+    setDragOverIdx(idx);
+    if (navigator.vibrate) navigator.vibrate(50);
+  };
+
+  const handleDragStart = (e: React.DragEvent, idx: number) => {
+    const isHandle = (e.target as HTMLElement).closest('.drag-handle');
+    if (!isHandle) {
+      e.preventDefault();
+      return;
     }
+    setDraggingIdx(idx);
+    setDragOverIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', idx.toString());
   };
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
@@ -36,32 +48,68 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
 
   const handleDragEnd = () => {
     if (draggingIdx !== null && dragOverIdx !== null && draggingIdx !== dragOverIdx) {
-      // Find the actual items in the full list
-      const sourceItem = items[draggingIdx];
-      const targetItem = items[dragOverIdx];
+      const sItem = items[draggingIdx];
+      const tItem = items[dragOverIdx];
       
-      const newList = [...state.wish];
-      const sIdx = newList.findIndex(x => x.id === sourceItem.id);
-      const tIdx = newList.findIndex(x => x.id === targetItem.id);
-      
-      const [moved] = newList.splice(sIdx, 1);
-      newList.splice(tIdx, 0, moved);
-      
-      save({ ...state, wish: newList });
+      if (sItem && tItem) {
+        save((prev) => {
+          const newList = [...prev.wish];
+          const sIdx = newList.findIndex(x => x.id === sItem.id);
+          const tIdx = newList.findIndex(x => x.id === tItem.id);
+          if (sIdx !== -1 && tIdx !== -1) {
+            const [moved] = newList.splice(sIdx, 1);
+            newList.splice(tIdx, 0, moved);
+          }
+          return { ...prev, wish: newList };
+        });
+      }
     }
     setDraggingIdx(null);
     setDragOverIdx(null);
+    setLongPressActive(null);
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, idx: number) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    setLongPressActive(idx);
+    
+    pressTimer.current = setTimeout(() => {
+      startDrag(idx);
+    }, 350); 
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (draggingIdx === null) return;
     const touch = e.touches[0];
+    
+    if (draggingIdx === null) {
+      if (touchStartPos.current) {
+        const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+        const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+        if (dx > 8 || dy > 8) {
+          if (pressTimer.current) clearTimeout(pressTimer.current);
+          setLongPressActive(null);
+          touchStartPos.current = null;
+        }
+      }
+      return;
+    }
+
+    if (e.cancelable) e.preventDefault();
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const card = el?.closest('.wish-card');
     if (card) {
       const idx = Number(card.getAttribute('data-idx'));
-      if (!isNaN(idx) && idx !== dragOverIdx) setDragOverIdx(idx);
+      if (!isNaN(idx) && idx !== dragOverIdx) {
+        setDragOverIdx(idx);
+      }
     }
+  };
+
+  const handleTouchEnd = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    handleDragEnd();
   };
 
   const filterLabels: Record<string, string> = {
@@ -196,45 +244,65 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
             <span className="sec-cnt">{items.length} 家</span>
           </div>
           <div className="grid-area">
-            {items.map((c, idx) => (
-              <div 
-                key={c.id} 
-                className={`card wish-card ${draggingIdx === idx ? 'dragging' : ''} ${dragOverIdx === idx ? 'drag-over' : ''}`}
-                data-idx={idx}
-                draggable
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleDragStart(e, idx)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleDragEnd}
-              >
-                <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
-                  <div className="drag-handle">
-                    <ICONS.Menu size={18} />
-                  </div>
-                  <div className="crow-top">
-                    <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>
-                    <a className="cname" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} target="_blank" rel="noopener noreferrer">{c.shop}</a>
-                    <div className="cactions">
-                      <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEdit(c.id); }}><ICONS.Edit /></div>
-                      <div className="cact del" onClick={(e) => { e.stopPropagation(); onDel(c.id); }}><ICONS.Delete /></div>
+            {items.map((c, idx) => {
+              const isDragging = draggingIdx === idx;
+              const isOver = dragOverIdx === idx;
+              let transform = 'none';
+              
+              if (draggingIdx !== null && dragOverIdx !== null && !isDragging) {
+                if (draggingIdx < dragOverIdx) {
+                   if (idx > draggingIdx && idx <= dragOverIdx) transform = 'translateY(-100%) translateY(-11px)';
+                } else if (draggingIdx > dragOverIdx) {
+                   if (idx < draggingIdx && idx >= dragOverIdx) transform = 'translateY(100%) translateY(11px)';
+                }
+              }
+
+              return (
+                <div 
+                  key={c.id} 
+                  className={`card wish-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${longPressActive === idx ? 'pressing' : ''}`}
+                  data-idx={idx}
+                  draggable
+                  style={{ 
+                    touchAction: 'none',
+                    transform: transform,
+                    zIndex: isDragging ? 100 : 1,
+                    transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)'
+                  }}
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, idx)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
+                    <div className="drag-handle" style={{ opacity: longPressActive === idx || isDragging ? 1 : 0.4 }}>
+                      <ICONS.Menu />
                     </div>
+                    <div className="crow-top">
+                      <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>
+                      <a className="cname" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} target="_blank" rel="noopener noreferrer">{c.shop}</a>
+                      <div className="cactions">
+                        <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEdit(c.id); }}><ICONS.Edit /></div>
+                        <div className="cact del" onClick={(e) => { e.stopPropagation(); onDel(c.id); }}><ICONS.Delete /></div>
+                      </div>
+                    </div>
+                    {c.item && <div className="citem"><span className="clabel wish">招牌</span><span style={{ color: '#261f15' }}>{c.item}</span></div>}
+                    <div className="ctags">
+                      {c.style && <span className="ctag sty">{c.style}</span>}
+                      {c.season && <span className="ctag sea">{c.season}</span>}
+                      {c.station && (
+                        <span className="ctag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {getMrtColor(c.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(c.station)! }} /> : '🚇'} {c.station}
+                        </span>
+                      )}
+                    </div>
+                    {c.comment && <div className="cnote" style={{ borderColor: '#1e1914', color: '#726a63' }}>📝 {c.comment}</div>}
                   </div>
-                  {c.item && <div className="citem"><span className="clabel wish">招牌</span><span style={{ color: '#261f15' }}>{c.item}</span></div>}
-                  <div className="ctags">
-                    {c.style && <span className="ctag sty">{c.style}</span>}
-                    {c.season && <span className="ctag sea">{c.season}</span>}
-                    {c.station && (
-                      <span className="ctag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {getMrtColor(c.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(c.station)! }} /> : '🚇'} {c.station}
-                      </span>
-                    )}
-                  </div>
-                  {c.comment && <div className="cnote" style={{ borderColor: '#1e1914', color: '#726a63' }}>📝 {c.comment}</div>}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

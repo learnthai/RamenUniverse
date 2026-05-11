@@ -217,7 +217,7 @@ export function SharePane() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3, marginTop: 1 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>捷運站</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38, padding: '0 30px 0 11px' }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
               <option value="all">全部捷運站</option>
               {uniqueStations.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -225,7 +225,7 @@ export function SharePane() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>湯系</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38, padding: '0 30px 0 11px' }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
               <option value="all">全部湯系</option>
               {uniqueSoups.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -233,7 +233,7 @@ export function SharePane() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>調味</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38, padding: '0 30px 0 11px' }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
               <option value="all">全部調味</option>
               {uniqueFlavors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -241,7 +241,7 @@ export function SharePane() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>星級</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterRating} onChange={e => setFilterRating(e.target.value)}>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38, padding: '0 30px 0 11px' }} value={filterRating} onChange={e => setFilterRating(e.target.value)}>
               <option value="all">全部星級</option>
               <option value="5">5 顆星 ★★★★★</option>
               <option value="4">4 顆星 ★★★★</option>
