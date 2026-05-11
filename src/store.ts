@@ -293,13 +293,31 @@ export const useStore = () => {
       }
 
       // V14 Cleanup: Force normalize all existing data to fix mistakes like "雞白" in style
-      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v4');
+      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v5');
       if (!migrated14) {
-        currentState.visited = (currentState.visited || []).map(normalizeCard);
-        currentState.wish = (currentState.wish || []).map(normalizeCard);
+        const updateMapping: Record<string, string> = {
+          '真劍': '雞清湯',
+          'Soba Shinn & 柑橘': '雞白湯',
+          '麵屋壹慶': '豚骨',
+          '鬼金棒': '味增'
+        };
+
+        const updateData = (list: RamenCard[]) => (list || []).map(c => {
+          const normC = normalizeCard(c);
+          if (updateMapping[normC.shop]) {
+            normC.season = updateMapping[normC.shop];
+            if (normC.visits) {
+              normC.visits = normC.visits.map(v => ({ ...v, season: updateMapping[normC.shop] }));
+            }
+          }
+          return normC;
+        });
+
+        currentState.visited = updateData(currentState.visited);
+        currentState.wish = updateData(currentState.wish);
         currentState.styles = defaultState.styles;
         currentState.seasons = defaultState.seasons;
-        localStorage.setItem('migrated_v14_cleanup_v4', '1');
+        localStorage.setItem('migrated_v14_cleanup_v5', '1');
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
 
