@@ -81,7 +81,7 @@ export default function App() {
             </div>
             <div className="hd-btns">
               <button className="hbtn" title="管理選單" onClick={() => openDrawer('manage')}>
-                <ICONS.Menu />
+                <ICONS.Sun />
               </button>
             </div>
           </div>

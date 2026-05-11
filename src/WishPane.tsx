@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { RamenCard } from './types';
-import { ICONS } from './constants';
+import { ICONS, MRT } from './constants';
+import { useStore } from './store';
 
 interface WishPaneProps {
   wish: RamenCard[];
@@ -10,9 +11,58 @@ interface WishPaneProps {
 }
 
 export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
+  const { state, save } = useStore();
   const [q, setQ] = useState('');
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
+
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const dragNode = useRef<HTMLDivElement | null>(null);
+
+  const handleDragStart = (e: React.DragEvent | React.TouchEvent, idx: number) => {
+    setDraggingIdx(idx);
+    if ('dataTransfer' in e) {
+       e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggingIdx === null) return;
+    if (idx !== dragOverIdx) setDragOverIdx(idx);
+  };
+
+  const handleDragEnd = () => {
+    if (draggingIdx !== null && dragOverIdx !== null && draggingIdx !== dragOverIdx) {
+      // Find the actual items in the full list
+      const sourceItem = items[draggingIdx];
+      const targetItem = items[dragOverIdx];
+      
+      const newList = [...state.wish];
+      const sIdx = newList.findIndex(x => x.id === sourceItem.id);
+      const tIdx = newList.findIndex(x => x.id === targetItem.id);
+      
+      const [moved] = newList.splice(sIdx, 1);
+      newList.splice(tIdx, 0, moved);
+      
+      save({ ...state, wish: newList });
+    }
+    setDraggingIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (draggingIdx === null) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const card = el?.closest('.wish-card');
+    if (card) {
+      const idx = Number(card.getAttribute('data-idx'));
+      if (!isNaN(idx) && idx !== dragOverIdx) setDragOverIdx(idx);
+    }
+  };
 
   const filterLabels: Record<string, string> = {
     station: '捷運站',
@@ -28,6 +78,12 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     if (type === 'style') opts = [...new Set(wish.map(c => c.style).filter(Boolean) as string[])];
     if (type === 'season') opts = [...new Set(wish.map(c => c.season).filter(Boolean) as string[])];
     return opts.sort();
+  };
+
+  const getMrtColor = (sta: string) => {
+    if (!sta) return null;
+    const line = MRT.find(l => l.stas.includes(sta));
+    return line ? line.c : null;
   };
 
   const items = useMemo(() => {
@@ -73,7 +129,7 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
         {q && <div className="s-clear show" onClick={() => setQ('')}>✕</div>}
       </div>
 
-      <div className="filter-bar" style={{ paddingLeft: 41 }}>
+      <div className="filter-bar" style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px 6px', padding: '0 14px', overflowX: 'visible' }}>
         {Object.entries(filterLabels).map(([key, label]) => (
           <button 
             key={key}
@@ -140,9 +196,23 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
             <span className="sec-cnt">{items.length} 家</span>
           </div>
           <div className="grid-area">
-            {items.map(c => (
-              <div key={c.id} className="card">
-                <div className="cbody">
+            {items.map((c, idx) => (
+              <div 
+                key={c.id} 
+                className={`card wish-card ${draggingIdx === idx ? 'dragging' : ''} ${dragOverIdx === idx ? 'drag-over' : ''}`}
+                data-idx={idx}
+                draggable
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+                onTouchStart={(e) => handleDragStart(e, idx)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleDragEnd}
+              >
+                <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
+                  <div className="drag-handle">
+                    <ICONS.Menu size={18} />
+                  </div>
                   <div className="crow-top">
                     <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>
                     <a className="cname" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} target="_blank" rel="noopener noreferrer">{c.shop}</a>
@@ -155,7 +225,11 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
                   <div className="ctags">
                     {c.style && <span className="ctag sty">{c.style}</span>}
                     {c.season && <span className="ctag sea">{c.season}</span>}
-                    {c.station && <span className="ctag sta">🚇 {c.station}</span>}
+                    {c.station && (
+                      <span className="ctag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {getMrtColor(c.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(c.station)! }} /> : '🚇'} {c.station}
+                      </span>
+                    )}
                   </div>
                   {c.comment && <div className="cnote" style={{ borderColor: '#1e1914', color: '#726a63' }}>📝 {c.comment}</div>}
                 </div>

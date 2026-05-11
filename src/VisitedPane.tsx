@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { RamenCard, Visit } from './types';
-import { ICONS } from './constants';
+import { ICONS, MRT } from './constants';
 
 interface VisitedPaneProps {
   visited: RamenCard[];
@@ -91,6 +91,12 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
     </div>
   );
 
+  const getMrtColor = (sta: string) => {
+    if (!sta) return null;
+    const line = MRT.find(l => l.stas.includes(sta));
+    return line ? line.c : null;
+  };
+
   return (
     <div className="pane on">
       <div className="search-bar">
@@ -106,7 +112,7 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
         {q && <div className="s-clear show" onClick={() => setQ('')}>✕</div>}
       </div>
 
-      <div className="filter-bar" style={{ paddingLeft: 41 }}>
+      <div className="filter-bar" style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px 6px', padding: '0 14px', overflowX: 'visible' }}>
         {Object.entries(filterLabels).map(([key, label]) => (
           <button 
             key={key}
@@ -187,7 +193,11 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
                       </div>
                     </div>
                     <div className="ctags">
-                      {c.station && <span className="ctag sta">🚇 {c.station}</span>}
+                      {c.station && (
+                        <span className="ctag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {getMrtColor(c.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(c.station)! }} /> : '🚇'} {c.station}
+                        </span>
+                      )}
                     </div>
                     <div className="visits-wrap">
                       {visits.map((v, idx) => (

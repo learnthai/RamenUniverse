@@ -83,7 +83,7 @@
     "id": "iegq86i",
     "shop": "麵屋壹之穴",
     "style": "煮干",
-    "station": "國父紀念館站",
+    "station": "國父紀念館",
     "visits": [
       {
         "id": "47qvaah",
@@ -131,7 +131,7 @@
     "id": "nze3ar5",
     "shop": "塩琉拉麵",
     "style": "海鮮",
-    "station": "北車",
+    "station": "台北車站",
     "visits": [
       {
         "id": "3jz2pbj",
@@ -899,7 +899,7 @@
     "id": "mlesjhp",
     "shop": "麵屋德家",
     "style": "煮干",
-    "station": "民權溪",
+    "station": "民權西路",
     "visits": [
       {
         "id": "u2p2udq",

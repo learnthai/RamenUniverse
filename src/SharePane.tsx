@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from './store';
-import { ICONS } from './constants';
+import { ICONS, MRT } from './constants';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import LZString from 'lz-string';
@@ -15,6 +15,7 @@ export function SharePane() {
   const [filterRating, setFilterRating] = useState<string>('all');
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   // Compute the filtered list
   const exportData = useMemo(() => {
@@ -58,6 +59,12 @@ export function SharePane() {
     return Array.from(set).sort();
   }, [state]);
 
+  const getMrtColor = (sta: string) => {
+    if (!sta) return null;
+    const line = MRT.find(l => l.stas.includes(sta));
+    return line ? line.c : null;
+  };
+
   React.useEffect(() => {
     if (filterSoup !== 'all' && !uniqueSoups.includes(filterSoup)) setFilterSoup('all');
   }, [uniqueSoups, filterSoup]);
@@ -73,13 +80,41 @@ export function SharePane() {
   };
 
   const handleExportJPG = async () => {
-    if (!contentRef.current) return;
+    if (!exportRef.current) return;
     try {
-      const canvas = await html2canvas(contentRef.current, { backgroundColor: '#fcfcfc', scale: 2, windowWidth: 800 });
-      const link = document.createElement('a');
-      link.download = `ramen-${filterType}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.9);
-      link.click();
+      const canvas = await html2canvas(exportRef.current, { 
+        backgroundColor: '#FAF6EE', 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], `ramen-${filterType}.png`, { type: 'image/png' });
+        
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: '我的拉麵清單',
+            });
+          } catch (e) {
+            // Fallback to download
+            const link = document.createElement('a');
+            link.download = `ramen-${filterType}.png`;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+          }
+        } else {
+          const link = document.createElement('a');
+          link.download = `ramen-${filterType}.png`;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+        }
+      }, 'image/png');
+      
+      showToast('📸 圖片產生成功！');
     } catch (err) {
       console.error(err);
       alert('匯出圖片失敗');
@@ -168,60 +203,58 @@ export function SharePane() {
   return (
     <div className="pane on" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className={`toast ${toastMsg ? 'on' : ''}`}>{toastMsg}</div>
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', marginTop: -10, marginLeft: -31 }}>
         <h3 style={{ margin: '0 0 15px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', textAlign: 'left', lineHeight: '26px' }}>篩選條件</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>來源類別</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>來源類別</span>
             <div className="fchips" style={{ margin: 0 }}>
-              <div className={`fchip ${filterType === 'visited' ? 'on c-visited' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilterType('visited')}>已吃清單 ({state.visited.length})</div>
-              <div className={`fchip ${filterType === 'wish' ? 'on c-wish' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilterType('wish')}>想去清單 ({state.wish.length})</div>
+              <div className={`fchip ${filterType === 'visited' ? 'on c-visited' : ''}`} style={{ cursor: 'pointer', fontSize: 12, padding: '4px 10px' }} onClick={() => setFilterType('visited')}>已吃清單 ({state.visited.length})</div>
+              <div className={`fchip ${filterType === 'wish' ? 'on c-wish' : ''}`} style={{ cursor: 'pointer', fontSize: 12, padding: '4px 10px' }} onClick={() => setFilterType('wish')}>想去清單 ({state.wish.length})</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3, marginTop: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>捷運站</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3, marginTop: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>捷運站</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
               <option value="all">全部捷運站</option>
               {uniqueStations.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>湯系</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>湯系</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
               <option value="all">全部湯系</option>
               {uniqueSoups.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>調味</span>
-            <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>調味</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
               <option value="all">全部調味</option>
               {uniqueFlavors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          {filterType === 'visited' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>星級</span>
-              <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterRating} onChange={e => setFilterRating(e.target.value)}>
-                <option value="all">全部星級</option>
-                <option value="5">5 顆星 ★★★★★</option>
-                <option value="4">4 顆星 ★★★★</option>
-                <option value="3">3 顆星 ★★★</option>
-                <option value="2">2 顆星 ★★</option>
-                <option value="1">1 顆星 ★</option>
-              </select>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', width: 70 }}>星級</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8, height: 38 }} value={filterRating} onChange={e => setFilterRating(e.target.value)}>
+              <option value="all">全部星級</option>
+              <option value="5">5 顆星 ★★★★★</option>
+              <option value="4">4 顆星 ★★★★</option>
+              <option value="3">3 顆星 ★★★</option>
+              <option value="2">2 顆星 ★★</option>
+              <option value="1">1 顆星 ★</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
-        <h3 style={{ margin: '0 0 16px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', lineHeight: '25px' }}>預覽匯出結果</h3>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', marginTop: -24 }}>
+        <h3 style={{ margin: '0 0 12px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', lineHeight: '25px' }}>預覽匯出結果</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {exportData.length === 0 ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#888', background: '#f0f0f0', borderRadius: 8 }}>沒找到符合條件的拉麵店。</div>
@@ -229,14 +262,16 @@ export function SharePane() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
               {exportData.map((item: any) => (
                 <div key={item.id} style={{ display: 'flex', flexDirection: 'column', border: '2px solid #1a1a1a', borderRadius: 12, padding: 12, background: '#fff' }}>
-                  <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>{item.shop}</span>
                     {filterType === 'visited' && item.visits && item.visits.length > 0 && (
                       <span style={{ fontSize: 14, fontWeight: 'normal', color: '#d92c2c' }}>★ {(item.visits.reduce((acc: number, cur: any) => acc + (cur.rating || 0), 0) / item.visits.length).toFixed(1)}</span>
                     )}
                   </div>
                     <div style={{ display: 'flex', gap: 6, fontSize: 12, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px' }}>🚇 {item.station || '—'}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px', gap: 4 }}>
+                        {getMrtColor(item.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(item.station)! }} /> : '🚇'} {item.station || '—'}
+                      </div>
                       {(item.style || (item.visits && item.visits[0]?.style)) && (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 13, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '26px' }}>
                           {item.style || item.visits[0]?.style}
@@ -260,7 +295,7 @@ export function SharePane() {
         </div>
       </div>
 
-      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)' }}>
+      <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', marginTop: -10 }}>
         <h3 style={{ margin: '0 0 16px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', lineHeight: '25px' }}>決定匯出格式</h3>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#e4c111' }} onClick={handleExportJPG}>
@@ -275,7 +310,56 @@ export function SharePane() {
         </div>
       </div>
 
-      {/* Hidden container for rendering export content cleanly */}
+      {/* Invisible container for high-quality export */}
+      <div className="export-canvas-container" ref={exportRef}>
+        <div className="export-header">
+           <span className="logo-icon">🍜</span>
+           <span className="export-logo-text">拉麵<em>です</em></span>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+           <h2 style={{ fontSize: 18, fontWeight: 800 }}>
+             {filterType === 'wish' ? '🍜 想去的拉麵清單' : '✅ 已經吃過的拉麵清單'}
+           </h2>
+           <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+             篩選：{filterStation !== 'all' ? filterStation : '不限'}, {filterSoup !== 'all' ? filterSoup : '不限'}
+           </p>
+        </div>
+        
+        {exportData.map((item: any) => (
+          <div key={item.id} className="export-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="export-shop">{item.shop}</div>
+              {filterType === 'visited' && item.visits && item.visits.length > 0 && (
+                <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 'bold' }}>
+                  ★ {(item.visits.reduce((acc: number, cur: any) => acc + (cur.rating || 0), 0) / item.visits.length).toFixed(1)}
+                </div>
+              )}
+            </div>
+            <div className="export-meta" style={{ marginTop: -2 }}>
+              <span className="export-tag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {getMrtColor(item.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(item.station)! }} /> : '🚇'} {item.station || '—'}
+              </span>
+              {(item.style || (item.visits && item.visits[0]?.style)) && (
+                <span className="export-tag sty">{item.style || item.visits[0]?.style}</span>
+              )}
+              {(item.season || (item.visits && item.visits[0]?.season)) && (
+                <span className="export-tag sea">{item.season || item.visits[0]?.season}</span>
+              )}
+            </div>
+            {((filterType === 'visited' && item.visits?.[item.visits.length - 1]?.comment) || item.comment) && (
+              <div style={{ marginTop: 8, fontSize: 11, color: '#555', background: '#f9f9f9', padding: '6px 8px', borderRadius: 6, opacity: 0.8 }}>
+                💬 {filterType === 'visited' ? item.visits![item.visits!.length - 1].comment : item.comment}
+              </div>
+            )}
+          </div>
+        ))}
+
+        <div className="export-watermark">
+          GENERATE BY RAMEN-DESU · {new Date().toLocaleDateString('zh-TW')}
+        </div>
+      </div>
+
+      {/* Hidden container for rendering export content cleanly (Old PDF one) */}
       <div style={{ position: 'absolute', top: -9999, left: -9999, width: 800, padding: 20 }}>
         <div ref={contentRef} style={{ background: '#fcfcfc', color: '#1a1a1a', padding: 40, fontFamily: 'sans-serif', zIndex: -1 }}>
           <h1 style={{ fontSize: 32, margin: '0 0 8px', borderBottom: '3px solid #1a1a1a', paddingBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>

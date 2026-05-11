@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AppState, RamenCard } from './types';
 import explicitVisits from './new_visits.json';
+import { MRT } from './constants';
 
 const SK = 'ramen_desu_v4';
 
@@ -32,6 +33,19 @@ function normalizeCard(c: RamenCard): RamenCard {
     return val;
   };
 
+  const normMrt = (s: string | undefined) => {
+    if (!s) return '';
+    let val = s.trim().replace(/站$/, '');
+    if (val === '民權溪' || val === '民權西') return '民權西路';
+    if (val === '國館') return '國父紀念館';
+    if (val === '北車') return '台北車站';
+    
+    // Check if valid
+    const allStas = MRT.flatMap(line => line.stas);
+    if (!allStas.includes(val)) return '';
+    return val;
+  };
+
   const classify = (styleIn: string | undefined, seasonIn: string | undefined) => {
     let s = norm(styleIn);
     let sea = norm(seasonIn);
@@ -48,11 +62,13 @@ function normalizeCard(c: RamenCard): RamenCard {
   };
 
   const { style, season } = classify(c.style, c.season);
+  const station = normMrt(c.station);
   
   return {
     ...c,
     style,
     season,
+    station,
     visits: (c.visits || []).map(v => {
       const vClass = classify(v.style, v.season);
       return {
@@ -293,7 +309,7 @@ export const useStore = () => {
       }
 
       // V14 Cleanup: Force normalize all existing data to fix mistakes like "雞白" in style
-      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v5');
+      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v6');
       if (!migrated14) {
         const updateMapping: Record<string, string> = {
           '真劍': '雞清湯',
@@ -317,7 +333,7 @@ export const useStore = () => {
         currentState.wish = updateData(currentState.wish);
         currentState.styles = defaultState.styles;
         currentState.seasons = defaultState.seasons;
-        localStorage.setItem('migrated_v14_cleanup_v5', '1');
+        localStorage.setItem('migrated_v14_cleanup_v6', '1');
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
 
