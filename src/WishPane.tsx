@@ -21,11 +21,12 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
   const [longPressActive, setLongPressActive] = useState<number | null>(null);
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const touchStartPos = useRef<{ x: number, y: number } | null>(null);
+  const lastTouchTime = useRef(0);
 
   const startDrag = (idx: number) => {
     setDraggingIdx(idx);
     setDragOverIdx(idx);
-    if (navigator.vibrate) navigator.vibrate(50);
+    if (navigator.vibrate) try { navigator.vibrate(40); } catch(e){}
   };
 
   const handleDragStart = (e: React.DragEvent, idx: number) => {
@@ -43,7 +44,9 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (draggingIdx === null) return;
-    if (idx !== dragOverIdx) setDragOverIdx(idx);
+    if (idx !== dragOverIdx) {
+      setDragOverIdx(idx);
+    }
   };
 
   const handleDragEnd = () => {
@@ -67,7 +70,10 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     setDraggingIdx(null);
     setDragOverIdx(null);
     setLongPressActive(null);
-    if (pressTimer.current) clearTimeout(pressTimer.current);
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent, idx: number) => {
@@ -75,9 +81,11 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     setLongPressActive(idx);
     
+    if (pressTimer.current) clearTimeout(pressTimer.current);
     pressTimer.current = setTimeout(() => {
       startDrag(idx);
-    }, 350); 
+      setLongPressActive(idx);
+    }, 400); 
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -87,8 +95,11 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
       if (touchStartPos.current) {
         const dx = Math.abs(touch.clientX - touchStartPos.current.x);
         const dy = Math.abs(touch.clientY - touchStartPos.current.y);
-        if (dx > 8 || dy > 8) {
-          if (pressTimer.current) clearTimeout(pressTimer.current);
+        if (dx > 15 || dy > 15) {
+          if (pressTimer.current) {
+            clearTimeout(pressTimer.current);
+            pressTimer.current = null;
+          }
           setLongPressActive(null);
           touchStartPos.current = null;
         }
@@ -97,6 +108,12 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     }
 
     if (e.cancelable) e.preventDefault();
+
+    // Throttling for performance
+    const now = Date.now();
+    if (now - lastTouchTime.current < 50) return; 
+    lastTouchTime.current = now;
+
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const card = el?.closest('.wish-card');
     if (card) {
@@ -277,7 +294,7 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
                   onTouchEnd={handleTouchEnd}
                 >
                   <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
-                    <div className="drag-handle" style={{ opacity: longPressActive === idx || isDragging ? 1 : 0.4 }}>
+                    <div className="drag-handle" style={{ opacity: isDragging ? 1 : 0.4 }}>
                       <ICONS.Menu />
                     </div>
                     <div className="crow-top">
