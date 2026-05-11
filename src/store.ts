@@ -19,6 +19,7 @@ function normalizeCard(c: RamenCard): RamenCard {
     if (!s) return '';
     let val = s.trim();
     if (val.includes('雞白')) return '雞白湯';
+    if (val.includes('牛骨')) return '牛骨白湯';
     if (val.includes('味增') || val.includes('味噌')) return '味增';
     if (val === '家系' || val.includes('橫濱家系')) return '橫濱家系';
     if (val.includes('海鮮')) return '海鮮';
@@ -292,13 +293,13 @@ export const useStore = () => {
       }
 
       // V14 Cleanup: Force normalize all existing data to fix mistakes like "雞白" in style
-      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v3');
+      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v4');
       if (!migrated14) {
         currentState.visited = (currentState.visited || []).map(normalizeCard);
         currentState.wish = (currentState.wish || []).map(normalizeCard);
         currentState.styles = defaultState.styles;
         currentState.seasons = defaultState.seasons;
-        localStorage.setItem('migrated_v14_cleanup_v3', '1');
+        localStorage.setItem('migrated_v14_cleanup_v4', '1');
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
 
