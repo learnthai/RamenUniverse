@@ -16,117 +16,216 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
 
-  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
-  const [longPressActive, setLongPressActive] = useState<number | null>(null);
-  const pressTimer = useRef<NodeJS.Timeout | null>(null);
-  const touchStartPos = useRef<{ x: number, y: number } | null>(null);
-  const lastTouchTime = useRef(0);
+  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const dragInfo = useRef<{
+    startY: number;
+    startIndex: number;
+    cardId: string;
+    moved: boolean;
+    currentDelta: number;
+  } | null>(null);
 
-  const startDrag = (idx: number) => {
-    setDraggingIdx(idx);
-    setDragOverIdx(idx);
-    if (navigator.vibrate) try { navigator.vibrate(40); } catch(e){}
-  };
+  // Link mis-trigger prevention
+  const linkTouch = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, idx: number) => {
-    const isHandle = (e.target as HTMLElement).closest('.drag-handle');
-    if (!isHandle) {
-      e.preventDefault();
-      return;
+  const items = useMemo(() => {
+    let res = wish;
+    if (q) {
+      const ql = q.toLowerCase();
+      res = res.filter(c => 
+        c.shop.toLowerCase().includes(ql) || 
+        (c.station || '').includes(q) || 
+        (c.item || '').toLowerCase().includes(ql)
+      );
     }
-    setDraggingIdx(idx);
-    setDragOverIdx(idx);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', idx.toString());
-  };
-
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (draggingIdx === null) return;
-    if (idx !== dragOverIdx) {
-      setDragOverIdx(idx);
+    if (filterValue && filterType) {
+      if (filterType === 'station') res = res.filter(c => c.station === filterValue);
+      if (filterType === 'shop') res = res.filter(c => c.shop === filterValue);
+      if (filterType === 'style') res = res.filter(c => c.style === filterValue);
+      if (filterType === 'season') res = res.filter(c => c.season === filterValue);
     }
-  };
+    return res;
+  }, [wish, q, filterType, filterValue]);
 
-  const handleDragEnd = () => {
-    if (draggingIdx !== null && dragOverIdx !== null && draggingIdx !== dragOverIdx) {
-      const sItem = items[draggingIdx];
-      const tItem = items[dragOverIdx];
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      const handle = (e.target as HTMLElement).closest('.drag-handle');
+      const card = (e.target as HTMLElement).closest('.wish-card') as HTMLElement;
       
-      if (sItem && tItem) {
-        save((prev) => {
-          const newList = [...prev.wish];
-          const sIdx = newList.findIndex(x => x.id === sItem.id);
-          const tIdx = newList.findIndex(x => x.id === tItem.id);
-          if (sIdx !== -1 && tIdx !== -1) {
-            const [moved] = newList.splice(sIdx, 1);
-            newList.splice(tIdx, 0, moved);
+      // Link protection logic
+      const link = (e.target as HTMLElement).closest('.cname');
+      if (link) {
+        linkTouch.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, moved: false };
+      }
+
+      if (!handle || !card) return;
+
+      const idx = Number(card.getAttribute('data-idx'));
+      const id = card.getAttribute('data-id');
+      if (isNaN(idx) || !id) return;
+
+      dragInfo.current = {
+        startY: e.touches[0].clientY,
+        startIndex: idx,
+        cardId: id,
+        moved: false,
+        currentDelta: 0
+      };
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      // Link protection
+      if (linkTouch.current) {
+        const dx = Math.abs(e.touches[0].clientX - linkTouch.current.startX);
+        const dy = Math.abs(e.touches[0].clientY - linkTouch.current.startY);
+        if (dx > 5 || dy > 5) linkTouch.current.moved = true;
+      }
+
+      if (!dragInfo.current) return;
+
+      const touch = e.touches[0];
+      const deltaY = touch.clientY - dragInfo.current.startY;
+      dragInfo.current.currentDelta = deltaY;
+
+      if (!dragInfo.current.moved && Math.abs(deltaY) > 8) {
+        dragInfo.current.moved = true;
+        setDraggingCardId(dragInfo.current.cardId);
+        if (navigator.vibrate) try { navigator.vibrate(40); } catch(err) {}
+      }
+
+      if (dragInfo.current.moved) {
+        if (e.cancelable) e.preventDefault();
+        
+        // Visual follow
+        const draggingEl = container.querySelector(`[data-id="${dragInfo.current.cardId}"]`) as HTMLElement;
+        if (draggingEl) {
+          draggingEl.style.transform = `translateY(${deltaY}px)`;
+          draggingEl.style.zIndex = '100';
+        }
+
+        // Shift others
+        const cards = Array.from(container.querySelectorAll('.wish-card')) as HTMLElement[];
+        const dragRect = draggingEl.getBoundingClientRect();
+        const dragCenter = dragRect.top + dragRect.height / 2;
+
+        cards.forEach((c) => {
+          if (c.getAttribute('data-id') === dragInfo.current?.cardId) return;
+          const rect = c.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          
+          if (deltaY > 0) { // Dragging down
+            if (center > dragInfo.current!.startY && center < dragCenter) {
+              c.classList.add('drag-over-up');
+              c.classList.remove('drag-over-down');
+            } else {
+              c.classList.remove('drag-over-up', 'drag-over-down');
+            }
+          } else { // Dragging up
+            if (center < dragInfo.current!.startY && center > dragCenter) {
+              c.classList.add('drag-over-down');
+              c.classList.remove('drag-over-up');
+            } else {
+              c.classList.remove('drag-over-up', 'drag-over-down');
+            }
           }
-          return { ...prev, wish: newList };
         });
       }
-    }
-    setDraggingIdx(null);
-    setDragOverIdx(null);
-    setLongPressActive(null);
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  };
+    };
 
-  const handleTouchStart = (e: React.TouchEvent, idx: number) => {
-    const touch = e.touches[0];
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-    setLongPressActive(idx);
-    
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-    pressTimer.current = setTimeout(() => {
-      startDrag(idx);
-      setLongPressActive(idx);
-    }, 400); 
-  };
+    const onTouchEnd = (e: TouchEvent) => {
+      // Link protection
+      if (linkTouch.current?.moved) {
+        // We can't easily prevent the click if it was already triggered or going to be
+        // but adding this to the link handler is better.
+      }
+      linkTouch.current = null;
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    
-    if (draggingIdx === null) {
-      if (touchStartPos.current) {
-        const dx = Math.abs(touch.clientX - touchStartPos.current.x);
-        const dy = Math.abs(touch.clientY - touchStartPos.current.y);
-        if (dx > 15 || dy > 15) {
-          if (pressTimer.current) {
-            clearTimeout(pressTimer.current);
-            pressTimer.current = null;
+      if (!dragInfo.current) return;
+
+      if (dragInfo.current.moved) {
+        const draggingEl = container.querySelector(`[data-id="${dragInfo.current.cardId}"]`) as HTMLElement;
+        const cards = Array.from(container.querySelectorAll('.wish-card')) as HTMLElement[];
+        
+        // Final position calculation
+        let targetIdx = dragInfo.current.startIndex;
+        const dragRect = draggingEl.getBoundingClientRect();
+        const dragCenter = dragRect.top + dragRect.height / 2;
+
+        const otherCards = cards.filter(c => c.getAttribute('data-id') !== dragInfo.current?.cardId);
+        
+        // Simplified target index estimation: 
+        // Iterate through all other cards and see how many we jumped over
+        let jumpedCount = 0;
+        otherCards.forEach((c) => {
+          const rect = c.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          if (dragInfo.current!.currentDelta > 0) {
+             if (center > dragInfo.current!.startY && center < dragCenter) jumpedCount++;
+          } else {
+             if (center < dragInfo.current!.startY && center > dragCenter) jumpedCount--;
           }
-          setLongPressActive(null);
-          touchStartPos.current = null;
+        });
+        targetIdx += jumpedCount;
+
+        // Perform move
+        const sItem = items[dragInfo.current.startIndex];
+        const tItem = items[targetIdx];
+
+        if (sItem && tItem && sItem.id !== tItem.id) {
+          save((prev) => {
+            const newList = [...prev.wish];
+            const sIdx = newList.findIndex(x => x.id === sItem.id);
+            const tIdx = newList.findIndex(x => x.id === tItem.id);
+            if (sIdx !== -1 && tIdx !== -1) {
+              const [moved] = newList.splice(sIdx, 1);
+              newList.splice(tIdx, 0, moved);
+            }
+            return { ...prev, wish: newList };
+          });
         }
       }
-      return;
-    }
 
-    if (e.cancelable) e.preventDefault();
+      // Cleanup visuals
+      const allCards = container.querySelectorAll('.wish-card') as NodeListOf<HTMLElement>;
+      allCards.forEach(c => {
+        c.style.transform = '';
+        c.style.zIndex = '';
+        c.classList.remove('dragging', 'drag-over-up', 'drag-over-down');
+      });
 
-    // Throttling for performance
-    const now = Date.now();
-    if (now - lastTouchTime.current < 50) return; 
-    lastTouchTime.current = now;
+      setDraggingCardId(null);
+      dragInfo.current = null;
+    };
 
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const card = el?.closest('.wish-card');
-    if (card) {
-      const idx = Number(card.getAttribute('data-idx'));
-      if (!isNaN(idx) && idx !== dragOverIdx) {
-        setDragOverIdx(idx);
-      }
-    }
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [items, save]);
+
+  const handleLinkTouchStart = (e: React.TouchEvent) => {
+     linkTouch.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, moved: false };
   };
-
-  const handleTouchEnd = () => {
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-    handleDragEnd();
+  const handleLinkTouchMove = (e: React.TouchEvent) => {
+    if (!linkTouch.current) return;
+    const dx = Math.abs(e.touches[0].clientX - linkTouch.current.startX);
+    const dy = Math.abs(e.touches[0].clientY - linkTouch.current.startY);
+    if (dx > 5 || dy > 5) linkTouch.current.moved = true;
+  };
+  const handleLinkTouchEnd = (e: React.TouchEvent) => {
+    if (linkTouch.current?.moved) {
+      e.preventDefault();
+    }
+    linkTouch.current = null;
   };
 
   const filterLabels: Record<string, string> = {
@@ -150,25 +249,6 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     const line = MRT.find(l => l.stas.includes(sta));
     return line ? line.c : null;
   };
-
-  const items = useMemo(() => {
-    let res = wish;
-    if (q) {
-      const ql = q.toLowerCase();
-      res = res.filter(c => 
-        c.shop.toLowerCase().includes(ql) || 
-        (c.station || '').includes(q) || 
-        (c.item || '').toLowerCase().includes(ql)
-      );
-    }
-    if (filterValue && filterType) {
-      if (filterType === 'station') res = res.filter(c => c.station === filterValue);
-      if (filterType === 'shop') res = res.filter(c => c.shop === filterValue);
-      if (filterType === 'style') res = res.filter(c => c.style === filterValue);
-      if (filterType === 'season') res = res.filter(c => c.season === filterValue);
-    }
-    return res;
-  }, [wish, q, filterType, filterValue]);
 
   const toggleFilter = (type: string) => {
     if (filterType === type) {
@@ -260,62 +340,54 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
             <span className="sec-line"></span>
             <span className="sec-cnt">{items.length} 家</span>
           </div>
-          <div className="grid-area">
+          <div id="list-wish" className="grid-area" ref={containerRef}>
             {items.map((c, idx) => {
-              const isDragging = draggingIdx === idx;
-              const isOver = dragOverIdx === idx;
-              let transform = 'none';
-              
-              if (draggingIdx !== null && dragOverIdx !== null && !isDragging) {
-                if (draggingIdx < dragOverIdx) {
-                   if (idx > draggingIdx && idx <= dragOverIdx) transform = 'translateY(-100%) translateY(-11px)';
-                } else if (draggingIdx > dragOverIdx) {
-                   if (idx < draggingIdx && idx >= dragOverIdx) transform = 'translateY(100%) translateY(11px)';
-                }
-              }
+              const isDragging = draggingCardId === c.id;
 
               return (
                 <div 
                   key={c.id} 
-                  className={`card wish-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${longPressActive === idx ? 'pressing' : ''}`}
+                  className={`card wish-card ${isDragging ? 'dragging' : ''}`}
                   data-idx={idx}
-                  draggable
-                  style={{ 
-                    touchAction: 'none',
-                    transform: transform,
-                    zIndex: isDragging ? 100 : 1,
-                    transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)'
-                  }}
-                  onDragStart={(e) => handleDragStart(e, idx)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
-                  onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleTouchStart(e, idx)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
+                  data-id={c.id}
                 >
-                  <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
-                    <div className="drag-handle" style={{ opacity: isDragging ? 1 : 0.4 }}>
-                      <ICONS.Menu />
+                  <div className="cbody" style={{ display: 'flex', padding: 0 }}>
+                    <div className="drag-handle" style={{ opacity: isDragging ? 0.6 : 0.25 }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                      </svg>
                     </div>
-                    <div className="crow-top">
-                      <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>
-                      <a className="cname" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} target="_blank" rel="noopener noreferrer">{c.shop}</a>
-                      <div className="cactions">
-                        <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEdit(c.id); }}><ICONS.Edit /></div>
-                        <div className="cact del" onClick={(e) => { e.stopPropagation(); onDel(c.id); }}><ICONS.Delete /></div>
+                    <div style={{ flex: 1, padding: '12px 12px 12px 4px' }}>
+                      <div className="crow-top">
+                        <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>
+                        <a 
+                          className="cname" 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onTouchStart={handleLinkTouchStart}
+                          onTouchMove={handleLinkTouchMove}
+                          onTouchEnd={handleLinkTouchEnd}
+                        >{c.shop}</a>
+                        <div className="cactions">
+                          <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEdit(c.id); }}><ICONS.Edit /></div>
+                          <div className="cact del" onClick={(e) => { e.stopPropagation(); onDel(c.id); }}><ICONS.Delete /></div>
+                        </div>
                       </div>
+                      {c.item && <div className="citem"><span className="clabel wish">招牌</span><span style={{ color: '#261f15' }}>{c.item}</span></div>}
+                      <div className="ctags">
+                        {c.style && <span className="ctag sty">{c.style}</span>}
+                        {c.season && <span className="ctag sea">{c.season}</span>}
+                        {c.station && (
+                          <span className="ctag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {getMrtColor(c.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(c.station)! }} /> : '🚇'} {c.station}
+                          </span>
+                        )}
+                      </div>
+                      {c.comment && <div className="cnote" style={{ borderColor: '#1e1914', color: '#726a63' }}>📝 {c.comment}</div>}
                     </div>
-                    {c.item && <div className="citem"><span className="clabel wish">招牌</span><span style={{ color: '#261f15' }}>{c.item}</span></div>}
-                    <div className="ctags">
-                      {c.style && <span className="ctag sty">{c.style}</span>}
-                      {c.season && <span className="ctag sea">{c.season}</span>}
-                      {c.station && (
-                        <span className="ctag sta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {getMrtColor(c.station) ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: getMrtColor(c.station)! }} /> : '🚇'} {c.station}
-                        </span>
-                      )}
-                    </div>
-                    {c.comment && <div className="cnote" style={{ borderColor: '#1e1914', color: '#726a63' }}>📝 {c.comment}</div>}
                   </div>
                 </div>
               );
