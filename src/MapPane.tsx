@@ -1,689 +1,62 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { useStore } from './store';
-import { ICONS } from './constants';
 
-const STATION_COORDS: Record<string, { x: number; y: number; lines: string[] }> = {
-  "淡水": {
-    x: 16,
-    y: 6.8,
-    lines: [
-      "red"
-    ]
-  },
-  "北投": {
-    x: 25.5,
-    y: 21.6,
-    lines: [
-      "red"
-    ]
-  },
-  "士林": {
-    x: 41.2,
-    y: 33.1,
-    lines: [
-      "red"
-    ]
-  },
-  "劍潭": {
-    x: 39.8,
-    y: 37,
-    lines: [
-      "red"
-    ]
-  },
-  "圓山": {
-    x: 41,
-    y: 40.5,
-    lines: [
-      "red"
-    ]
-  },
-  "民權西路": {
-    x: 41,
-    y: 44,
-    lines: [
-      "red",
-      "orange"
-    ]
-  },
-  "雙連": {
-    x: 41.2,
-    y: 48.1,
-    lines: [
-      "red"
-    ]
-  },
-  "中山": {
-    x: 41.1,
-    y: 52,
-    lines: [
-      "red",
-      "green"
-    ]
-  },
-  "北車": {
-    x: 40.1,
-    y: 58.1,
-    lines: [
-      "red",
-      "blue"
-    ]
-  },
-  "台北車站": {
-    x: 39.5,
-    y: 57.4,
-    lines: [
-      "red",
-      "blue"
-    ]
-  },
-  "台大醫院": {
-    x: 41,
-    y: 61,
-    lines: [
-      "red"
-    ]
-  },
-  "中正紀念堂": {
-    x: 41,
-    y: 65.5,
-    lines: [
-      "red",
-      "green"
-    ]
-  },
-  "東門": {
-    x: 48.8,
-    y: 65.5,
-    lines: [
-      "red",
-      "orange"
-    ]
-  },
-  "大安森林公園": {
-    x: 55.5,
-    y: 65.5,
-    lines: [
-      "red"
-    ]
-  },
-  "大安": {
-    x: 61.3,
-    y: 65.8,
-    lines: [
-      "red",
-      "brown"
-    ]
-  },
-  "信義安和": {
-    x: 68.3,
-    y: 65.4,
-    lines: [
-      "red"
-    ]
-  },
-  "台北101": {
-    x: 74.8,
-    y: 65.5,
-    lines: [
-      "red"
-    ]
-  },
-  "台北101/世貿": {
-    x: 74.8,
-    y: 65.5,
-    lines: [
-      "red"
-    ]
-  },
-  "象山": {
-    x: 81,
-    y: 65.5,
-    lines: [
-      "red"
-    ]
-  },
-  "頂埔": {
-    x: 21,
-    y: 94,
-    lines: [
-      "blue"
-    ]
-  },
-  "永寧": {
-    x: 21,
-    y: 90.5,
-    lines: [
-      "blue"
-    ]
-  },
-  "府中": {
-    x: 21,
-    y: 75,
-    lines: [
-      "blue"
-    ]
-  },
-  "板橋": {
-    x: 21.1,
-    y: 73.4,
-    lines: [
-      "blue",
-      "yellow"
-    ]
-  },
-  "新埔": {
-    x: 21,
-    y: 65.8,
-    lines: [
-      "blue"
-    ]
-  },
-  "江子翠": {
-    x: 27.5,
-    y: 64.5,
-    lines: [
-      "blue"
-    ]
-  },
-  "龍山寺": {
-    x: 31.5,
-    y: 60.5,
-    lines: [
-      "blue"
-    ]
-  },
-  "西門": {
-    x: 33.9,
-    y: 58,
-    lines: [
-      "blue",
-      "green"
-    ]
-  },
-  "善導寺": {
-    x: 48.5,
-    y: 58,
-    lines: [
-      "blue"
-    ]
-  },
-  "忠孝新生": {
-    x: 51.3,
-    y: 58,
-    lines: [
-      "blue",
-      "orange"
-    ]
-  },
-  "忠孝復興": {
-    x: 61.6,
-    y: 58.1,
-    lines: [
-      "blue",
-      "brown"
-    ]
-  },
-  "忠孝敦化": {
-    x: 68.5,
-    y: 58,
-    lines: [
-      "blue"
-    ]
-  },
-  "敦化": {
-    x: 68.5,
-    y: 58,
-    lines: [
-      "blue"
-    ]
-  },
-  "國父紀念館": {
-    x: 75,
-    y: 58,
-    lines: [
-      "blue"
-    ]
-  },
-  "國館": {
-    x: 75,
-    y: 58,
-    lines: [
-      "blue"
-    ]
-  },
-  "市政府": {
-    x: 81.5,
-    y: 58,
-    lines: [
-      "blue"
-    ]
-  },
-  "南港": {
-    x: 93.5,
-    y: 53.5,
-    lines: [
-      "blue"
-    ]
-  },
-  "松山": {
-    x: 81,
-    y: 52.3,
-    lines: [
-      "green"
-    ]
-  },
-  "南京三民": {
-    x: 75,
-    y: 52.3,
-    lines: [
-      "green"
-    ]
-  },
-  "台北小巨蛋": {
-    x: 68.3,
-    y: 52.3,
-    lines: [
-      "green"
-    ]
-  },
-  "南京復興": {
-    x: 61.4,
-    y: 52.1,
-    lines: [
-      "green",
-      "brown"
-    ]
-  },
-  "松江南京": {
-    x: 52.1,
-    y: 51.8,
-    lines: [
-      "green",
-      "orange"
-    ]
-  },
-  "北門": {
-    x: 35.8,
-    y: 50.5,
-    lines: [
-      "green"
-    ]
-  },
-  "小南門": {
-    x: 35.8,
-    y: 65.5,
-    lines: [
-      "green"
-    ]
-  },
-  "古亭": {
-    x: 45,
-    y: 69.5,
-    lines: [
-      "green",
-      "orange"
-    ]
-  },
-  "台電大樓": {
-    x: 49,
-    y: 72,
-    lines: [
-      "green"
-    ]
-  },
-  "公館": {
-    x: 52.8,
-    y: 74.5,
-    lines: [
-      "green"
-    ]
-  },
-  "萬隆": {
-    x: 56.5,
-    y: 78,
-    lines: [
-      "green"
-    ]
-  },
-  "景美": {
-    x: 59.5,
-    y: 81,
-    lines: [
-      "green"
-    ]
-  },
-  "迴龍": {
-    x: 7.4,
-    y: 75.5,
-    lines: [
-      "orange"
-    ]
-  },
-  "輔大": {
-    x: 5.8,
-    y: 67.5,
-    lines: [
-      "orange"
-    ]
-  },
-  "新莊": {
-    x: 6.3,
-    y: 63.5,
-    lines: [
-      "orange"
-    ]
-  },
-  "先嗇宮": {
-    x: 14.4,
-    y: 55.5,
-    lines: [
-      "orange"
-    ]
-  },
-  "三重": {
-    x: 18,
-    y: 52,
-    lines: [
-      "orange",
-      "purple"
-    ]
-  },
-  "菜寮": {
-    x: 21.5,
-    y: 49,
-    lines: [
-      "orange"
-    ]
-  },
-  "台北橋": {
-    x: 25,
-    y: 46.5,
-    lines: [
-      "orange"
-    ]
-  },
-  "大橋頭": {
-    x: 32,
-    y: 44.8,
-    lines: [
-      "orange"
-    ]
-  },
-  "中山國小": {
-    x: 48,
-    y: 44.8,
-    lines: [
-      "orange"
-    ]
-  },
-  "行天宮": {
-    x: 54.5,
-    y: 48,
-    lines: [
-      "orange"
-    ]
-  },
-  "頂溪": {
-    x: 42.5,
-    y: 73.5,
-    lines: [
-      "orange"
-    ]
-  },
-  "蘆洲": {
-    x: 19.5,
-    y: 31.7,
-    lines: [
-      "orange",
-      "yellow"
-    ]
-  },
-  "三民高中": {
-    x: 22,
-    y: 34.3,
-    lines: [
-      "orange",
-      "yellow"
-    ]
-  },
-  "徐匯中學": {
-    x: 24.5,
-    y: 36.9,
-    lines: [
-      "orange",
-      "yellow"
-    ]
-  },
-  "三和國中": {
-    x: 27,
-    y: 39.5,
-    lines: [
-      "orange",
-      "yellow"
-    ]
-  },
-  "三重國小": {
-    x: 26.4,
-    y: 42.1,
-    lines: [
-      "orange",
-      "yellow"
-    ]
-  },
-  "南港展覽館": {
-    x: 93.5,
-    y: 48.5,
-    lines: [
-      "brown",
-      "blue"
-    ]
-  },
-  "內湖": {
-    x: 82.3,
-    y: 36.1,
-    lines: [
-      "brown"
-    ]
-  },
-  "劍南路": {
-    x: 61.5,
-    y: 37,
-    lines: [
-      "brown"
-    ]
-  },
-  "大直": {
-    x: 61.5,
-    y: 41,
-    lines: [
-      "brown"
-    ]
-  },
-  "松山機場": {
-    x: 61.5,
-    y: 44.5,
-    lines: [
-      "brown"
-    ]
-  },
-  "中山國中": {
-    x: 61.5,
-    y: 48,
-    lines: [
-      "brown"
-    ]
-  },
-  "科技大樓": {
-    x: 61.5,
-    y: 69.3,
-    lines: [
-      "brown"
-    ]
-  },
-  "六張犁": {
-    x: 67.5,
-    y: 72,
-    lines: [
-      "brown"
-    ]
-  },
-  "動物園": {
-    x: 85.5,
-    y: 81,
-    lines: [
-      "brown"
-    ]
-  },
-  "新埔民生": {
-    x: 16,
-    y: 67,
-    lines: [
-      "yellow"
-    ]
-  },
-  "景安": {
-    x: 42.5,
-    y: 81,
-    lines: [
-      "yellow",
-      "orange"
-    ]
-  },
-  "大坪林": {
-    x: 64.5,
-    y: 84.5,
-    lines: [
-      "yellow",
-      "green"
-    ]
-  },
-  "林口": {
-    x: 5.5,
-    y: 32.5,
-    lines: [
-      "purple"
-    ]
-  },
-  "泰山": {
-    x: 11.5,
-    y: 43.5,
-    lines: [
-      "purple"
-    ]
-  },
-  "新莊副都心": {
-    x: 11.5,
-    y: 46.5,
-    lines: [
-      "purple"
-    ]
-  },
-  "敦化or": {
-    x: 50,
-    y: 50,
-    lines: []
-  },
-  "國父紀念館站🤏🏾": {
-    x: 50,
-    y: 50,
-    lines: []
-  },
-  "可嘗試一次": {
-    x: 50,
-    y: 50,
-    lines: []
-  },
-  "本店（北車）": {
-    x: 42.6,
-    y: 58.2,
-    lines: []
-  }
+// Mapping SVG Path IDs to human-readable station names used in the app
+const STATION_ID_TO_NAME: Record<string, string> = {
+  // 轉乘站
+  "O11_R13": "民權西路",
+  "G14_R11": "中山",
+  "B12_R10": "台北車站",
+  "G10_R08": "中正紀念堂",
+  "R07_O06": "東門",
+  "R05_BR09": "大安",
+  "G15_O08": "松江南京",
+  "BL14_O07": "忠孝新生",
+  "G09_O05": "古亭",
+  "BL11_G12": "西門",
+  "G16_BR11": "南京復興",
+  "BL15_BR10": "忠孝復興",
+  "BL23_BR24": "南港展覽館",
+
+  // 橘線 (O)
+  "O54": "蘆洲", "O53": "三民高中", "O52": "徐匯中學", "O51": "三和國中", "O50": "三重國小",
+  "O21": "迴龍", "O20": "丹鳳", "O19": "輔大", "O18": "新莊", "O17": "頭前庄", "O16": "先嗇宮",
+  "O15": "三重", "O14": "菜寮", "O13": "台北橋", "O12": "大橋頭",
+  "O10": "中山國小", "O09": "行天宮", "O04": "頂溪", "O03": "永安市場", "O02": "景安", "O01": "南勢角",
+
+  // 紅線 (R)
+  "R28": "淡水", "R27": "紅樹林", "R26": "竹圍", "R25": "關渡", "R24": "忠義", "R23": "復興崗",
+  "R22": "北投", "R22A": "新北投", "R21": "奇岩", "R20": "唭哩岸", "R19": "石牌", "R18": "明德",
+  "R17": "芝山", "R16": "士林", "R15": "劍潭", "R14": "圓山", "R12": "雙連", "R09": "台大醫院",
+  "R06": "大安森林公園", "R04": "信義安和", "R03": "台北101/世貿", "R02": "象山",
+
+  // 綠線 (G)
+  "G01": "新店", "G02": "新店區公所", "G03": "七張", "G03A": "小碧潭", "G04": "大坪林", "G05": "景美", "G06": "萬隆", "G07": "公館", "G08": "台電大樓", "G11": "小南門", "G13": "北門", "G17": "台北小巨蛋", "G18": "南京三民", "G19": "松山",
+
+  // 藍線 (BL)
+  "BL01": "頂埔", "BL02": "永寧", "BL03": "土城", "BL04": "海山", "BL05": "亞東醫院", "BL06": "府中", "BL07": "板橋", "BL08": "新埔", "BL09": "江子翠", "BL10": "龍山寺", "BL13": "善導寺", "BL16": "忠孝敦化", "BL17": "國父紀念館", "BL18": "市政府", "BL19": "永春", "BL20": "後山埤", "BL21": "昆陽", "BL22": "南港",
+
+  // 棕線 (BR)
+  "BR01": "動物園", "BR02": "木柵", "BR03": "萬芳社區", "BR04": "萬芳醫院", "BR05": "辛亥", "BR06": "麟光", "BR07": "六張犁", "BR08": "科技大樓", "BR12": "中山國中", "BR13": "松山機場", "BR14": "大直", "BR15": "劍南路", "BR16": "西湖", "BR17": "港墘", "BR18": "文德", "BR19": "內湖", "BR20": "大湖公園", "BR21": "葫洲", "BR22": "東湖", "BR23": "南港軟體園區",
 };
 
-const LINE_COLORS = {
-  'red': '#e3002c',
-  'blue': '#0070bd',
-  'green': '#008659',
-  'orange': '#f8b61c',
-  'brown': '#c48c31',
-  'yellow': '#ffdf00',
-  'purple': '#8e44ad',
+// Colors for highlighting active stations
+const COLORS = {
+  visited: 'rgba(42, 122, 100, 0.4)', // var(--green)
+  wish: 'rgba(232, 68, 42, 0.4)',    // var(--red)
+  active: 'rgba(74, 142, 194, 0.4)', // var(--blue)
 };
-
-const LINE_NAMES = [
-  { id: 'all', name: '全線' },
-  { id: 'red', name: '🔴 紅線' },
-  { id: 'blue', name: '🔵 藍線' },
-  { id: 'green', name: '🟢 綠線' },
-  { id: 'orange', name: '🟠 橘線' },
-  { id: 'brown', name: '🟤 棕線' },
-  { id: 'yellow', name: '🟡 黃線' },
-  { id: 'purple', name: '🟣 機捷' }
-];
 
 export const MapPane = () => {
   const { state } = useStore();
-  const [activeLine, setActiveLine] = useState('all');
-  const [hoveredStation, setHoveredStation] = useState<string | null>(null);
   const [clickedStation, setClickedStation] = useState<string | null>(null);
+  const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
-  const [editMode, setEditMode] = useState(false);
-  const [localCoords, setLocalCoords] = useState(STATION_COORDS);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    if (!editMode || !clickedStation) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      setLocalCoords((prev) => {
-        const coords = prev[clickedStation];
-        if (!coords) return prev;
-        
-        let dx = 0;
-        let dy = 0;
-        const step = e.shiftKey ? 0.5 : 0.1; // Shift for larger steps
-
-        switch (e.key) {
-          case 'ArrowUp':
-          case 'w':
-            dy = -step; break;
-          case 'ArrowDown':
-          case 's':
-            dy = step; break;
-          case 'ArrowLeft':
-          case 'a':
-            dx = -step; break;
-          case 'ArrowRight':
-          case 'd':
-            dx = step; break;
-          default:
-            return prev;
-        }
-
-        e.preventDefault();
-        return {
-          ...prev,
-          [clickedStation]: {
-            ...coords,
-            x: Number((coords.x + dx).toFixed(2)),
-            y: Number((coords.y + dy).toFixed(2))
-          }
-        };
-      });
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editMode, clickedStation]);
-
-  // Aggregate all stores by station
+  // Aggregate stores by station name
   const stationStores = useMemo(() => {
     const map = new Map<string, any[]>();
-
     
-    // Add visited
     state.visited.forEach(v => {
       if (!v.station) return;
       const arr = map.get(v.station) || [];
@@ -691,7 +64,6 @@ export const MapPane = () => {
       map.set(v.station, arr);
     });
     
-    // Add wishes
     state.wish.forEach(w => {
       if (!w.station) return;
       const arr = map.get(w.station) || [];
@@ -702,247 +74,248 @@ export const MapPane = () => {
     return map;
   }, [state.visited, state.wish]);
 
-  // Keep localCoords updated with any missing stations from stores
-  useEffect(() => {
-    setLocalCoords(prev => {
-      let changed = false;
-      const next = { ...prev };
-      for (const station of stationStores.keys()) {
-        if (!next[station]) {
-          next[station] = { x: 50, y: 50, lines: [] };
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [stationStores]);
-
   const activeStation = clickedStation || hoveredStation;
   const activeStores = activeStation ? stationStores.get(activeStation) : null;
 
+  // Helper to get status of a station ID
+  const getStationStatus = (id: string) => {
+    const name = STATION_ID_TO_NAME[id];
+    if (!name) return null;
+    const stores = stationStores.get(name);
+    if (!stores) return null;
+    return stores.some(s => s.type === 'visited') ? 'visited' : 'wish';
+  };
+
+  const handlePathClick = (id: string) => {
+    const name = STATION_ID_TO_NAME[id];
+    if (name) {
+      setClickedStation(name === clickedStation ? null : name);
+    }
+  };
+
   return (
     <div className="grid-area full" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', paddingBottom: 0, marginBottom: 0 }}>
-      {/* Line Filter */}
-      <div className="filter-bar" style={{ padding: '0 24px 12px', flexShrink: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
-        {LINE_NAMES.map(l => (
-          <button 
-            key={l.id}
-            className={`fbtn ${activeLine === l.id ? 'on' : ''}`}
-            onClick={() => setActiveLine(l.id)}
-            style={activeLine === l.id && l.id !== 'all' ? { backgroundColor: LINE_COLORS[l.id as keyof typeof LINE_COLORS], borderColor: LINE_COLORS[l.id as keyof typeof LINE_COLORS], color: '#fff' } : {}}
-          >
-            {l.name}
-          </button>
-        ))}
-        {process.env.NODE_ENV === 'development' && (
-          <button 
-            className={`fbtn ${editMode ? 'on' : ''}`}
-            onClick={() => setEditMode(!editMode)}
-            style={{ marginLeft: 'auto' }}
-          >
-            🔧 編輯座標
-          </button>
-        )}
+      {/* List count summary */}
+      <div style={{ padding: '0 24px 12px', flexShrink: 0, display: 'flex', gap: 10, alignItems: 'center' }}>
+         <div style={{ fontSize: 13, fontWeight: 700, background: '#fff', padding: '6px 12px', borderRadius: 100, border: 'var(--bdr)', boxShadow: 'var(--shadow-sm)' }}>
+           已地標：{Array.from(stationStores.keys()).length} 站
+         </div>
+         <p style={{ fontSize: 11, color: 'var(--ink-soft)' }}>點擊地圖上的站點查看拉麵清單</p>
       </div>
 
-      <div style={{ flex: 1, position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#eef1f4', border: 'var(--bdr)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-        <TransformWrapper
-          initialScale={1}
-          minScale={0.1}
-          maxScale={8}
-          limitToBounds={false}
-          centerOnInit={true}
-          wheel={{ step: 0.1 }}
-        >
-          {(utils) => {
-            const currentScale = utils.state.scale;
-            // The inverse scale allows our pins to stay visually the same size when zooming
-            const inverseScale = 1 / currentScale;
-
-            return (
-              <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
-                <div style={{ position: 'relative', width: 1200, maxWidth: 'none' }}>
-                    <img 
-                      ref={imgRef}
-                      src="/metro.png" 
-                      alt="Taipei Metro Map" 
-                      style={{ width: '100%', height: 'auto', display: 'block', cursor: editMode && clickedStation ? 'crosshair' : 'default' }}
-                      onPointerDown={(e) => { 
-                        if (editMode && clickedStation && imgRef.current) {
-                          // Allow jumping the pin to roughly where we clicked, if a station is selected
-                          e.stopPropagation();
-                          const rect = imgRef.current.getBoundingClientRect();
-                          const x = ((e.clientX - rect.left) / rect.width) * 100;
-                          const y = ((e.clientY - rect.top) / rect.height) * 100;
-                          setLocalCoords(prev => ({
-                            ...prev,
-                            [clickedStation]: {
-                              ...prev[clickedStation],
-                              x: Number(x.toFixed(2)),
-                              y: Number(y.toFixed(2))
-                            }
-                          }));
-                        } else {
-                          setClickedStation(null); 
-                          setHoveredStation(null); 
-                        }
-                      }}
+      <div style={{ flex: 1, position: 'relative' }}>
+        {/* Map Container - Robust Padding-Top Square */}
+        <div className="relative w-full mx-auto" style={{ paddingTop: '100%', borderRadius: 12, border: 'var(--bdr)', overflow: 'hidden' }}>
+          <div className="absolute inset-0">
+            <TransformWrapper
+              initialScale={1}
+              minScale={1}
+              maxScale={8}
+              centerOnInit={true}
+              limitToBounds={true}
+            >
+              <TransformComponent 
+                wrapperClassName="!w-full !h-full" 
+                contentClassName="!w-full !h-full"
+                wrapperStyle={{ width: '100%', height: '100%' }}
+                contentStyle={{ width: '100%', height: '100%' }}
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  xmlnsXlink="http://www.w3.org/1999/xlink" 
+                  viewBox="0 0 580 580"
+                  width="100%"
+                  height="100%"
+                  preserveAspectRatio="xMidYMid slice"
+                  className="w-full h-full block"
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    touchAction: 'none', 
+                    display: 'block',
+                    objectFit: 'cover'
+                  }}
+                  onClick={() => {
+                      if (!hoveredStation) setClickedStation(null);
+                  }}
+                >
+                  {/* 底圖層 */}
+                  <g id="Background_Map">
+                    <image 
+                      x="0"
+                      y="0"
+                      width="580" 
+                      height="580" 
+                      preserveAspectRatio="none"
+                      xlinkHref="https://cdn.phototourl.com/free/2026-05-05-8f3ccc54-e909-4054-b570-7358d778c9a5.jpg"
                     />
-                  
-                  {/* Overlay Pins */}
-                  {Array.from(stationStores.entries()).map(([stationName, stores]) => {
-                    const coords = localCoords[stationName] || STATION_COORDS[stationName];
-                    if (!coords) return null;
+                  </g>
+                    
+                    {/* 互動點擊層 */}
+                    <g id="Interactions" style={{ cursor: 'pointer' }}>
+                      {/* 轉乘站 */}
+                      {[
+                        { id: 'O11_R13', d: 'M233.13,243.41h-12.24c-1.69,0-3.06,1.35-3.06,3.02v5.58c0,1.66,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.36,3.06-3.02v-5.58c0-1.67-1.37-3.02-3.06-3.02' },
+                        { id: 'G14_R11', d: 'M233.13,285.35h-12.24c-1.68,0-3.06,1.36-3.06,3.02v5.58c0,1.67,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.35,3.06-3.02v-5.58c0-1.66-1.37-3.02-3.06-3.02' },
+                        { id: 'B12_R10', d: 'M233.14,323.78h-12.24c-1.69,0-3.06,1.35-3.06,3.02v5.58c0,1.67,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.36,3.06-3.02v-5.58c0-1.67-1.37-3.02-3.06-3.02' },
+                        { id: 'G10_R08', d: 'M233.13,365.93h-12.24c-1.68,0-3.06,1.36-3.06,3.02v5.58c0,1.67,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.35,3.06-3.02v-5.58c0-1.66-1.37-3.02-3.06-3.02' },
+                        { id: 'R07_O06', d: 'M275.83,366.06h-12.24c-1.68,0-3.05,1.36-3.05,3.02v5.58c0,1.66,1.37,3.02,3.05,3.02h12.24c1.68,0,3.05-1.36,3.05-3.02v-5.58c0-1.66-1.37-3.02-3.05-3.02' },
+                        { id: 'R05_BR09', d: 'M327.09,366.06h-12.24c-1.68,0-3.06,1.36-3.06,3.02v5.58c0,1.66,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.36,3.06-3.02v-5.58c0-1.67-1.37-3.02-3.06-3.02' },
+                        { id: 'G15_O08', d: 'M281.1,285.35h-12.24c-1.68,0-3.05,1.36-3.05,3.02v5.58c0,1.67,1.37,3.02,3.05,3.02h12.24c1.69,0,3.06-1.35,3.06-3.02v-5.58c0-1.66-1.37-3.02-3.06-3.02' },
+                        { id: 'BL14_O07', d: 'M281.1,323.77h-12.25c-1.68,0-3.05,1.36-3.05,3.02v5.58c0,1.66,1.37,3.02,3.05,3.02h12.25c1.68,0,3.06-1.36,3.06-3.02v-5.58c0-1.67-1.37-3.02-3.06-3.02' },
+                        { id: 'G09_O05', d: 'M254.59,388.21h-12.24c-1.69,0-3.06,1.35-3.06,3.02v5.58c0,1.66,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.36,3.06-3.02v-5.58c0-1.66-1.37-3.02-3.06-3.02' },
+                        { id: 'BL11_G12', d: 'M199.6,323.78h-12.25c-1.68,0-3.06,1.35-3.06,3.02v5.58c0,1.66,1.37,3.02,3.06,3.02h12.25c1.68,0,3.06-1.36,3.06-3.02v-5.58c0-1.67-1.37-3.02-3.06-3.02' },
+                        { id: 'G16_BR11', d: 'M327.1,285.35h-12.25c-1.69,0-3.05,1.36-3.05,3.02v5.58c0,1.67,1.36,3.02,3.05,3.02h12.25c1.69,0,3.05-1.35,3.05-3.02v-5.58c0-1.66-1.37-3.02-3.05-3.02' },
+                        { id: 'BL15_BR10', d: 'M327.1,323.77h-12.25c-1.69,0-3.06,1.36-3.06,3.02v5.58c0,1.66,1.37,3.02,3.06,3.02h12.25c1.68,0,3.05-1.36,3.05-3.02v-5.58c0-1.67-1.37-3.02-3.05-3.02' },
+                        { id: 'BL23_BR24', d: 'M516.93,298h-11.65c-1.68,0-3.05,1.35-3.05,3.02v5.58c0,1.67,1.37,3.02,3.05,3.02h11.65c1.68,0,3.05-1.36,3.05-3.02v-5.58c0-1.67-1.37-3.02-3.05-3.02' },
+                      ].map(path => (
+                        <path 
+                          key={path.id}
+                          id={path.id} 
+                          d={path.d} 
+                          fill={clickedStation === STATION_ID_TO_NAME[path.id] ? COLORS.active : (getStationStatus(path.id) === 'visited' ? COLORS.visited : (getStationStatus(path.id) === 'wish' ? COLORS.wish : 'transparent'))}
+                          stroke={clickedStation === STATION_ID_TO_NAME[path.id] ? 'var(--blue)' : 'transparent'}
+                          strokeWidth="1.2"
+                          onMouseEnter={() => setHoveredStation(STATION_ID_TO_NAME[path.id])}
+                          onMouseLeave={() => setHoveredStation(null)}
+                          onClick={(e) => { e.stopPropagation(); handlePathClick(path.id); }}
+                        />
+                      ))}
 
-                    if (activeLine !== 'all' && !coords.lines.includes(activeLine)) {
-                      return null;
-                    }
+                      {/* 橘線站點 */}
+                      {[
+                        { id: 'O54', d: 'M90.49,161.35h-3.51c-1.24,0-2.26,1-2.26,2.23v5.66c0,1.23,1.02,2.23,2.26,2.23h3.51c1.25,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                        { id: 'O53', d: 'M101.18,184.61c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.88,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'O52', d: 'M118.38,201.32c0,1.09.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'O51', d: 'M134.43,216.9c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'O50', d: 'M150.91,233.01c0,1.09.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'O21', d: 'M33.05,385.14h-3.51c-1.24,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.51c1.25,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                        { id: 'O20', d: 'M43.74,376.65c0,1.1.9,1.98,2,1.98h3.51c1.11,0,2.01-.88,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2,.89-2,1.98v5.66Z' },
+                        { id: 'O19', d: 'M59.08,361.18c0,1.09.9,1.98,2,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2,.89-2,1.98,0,0,0,5.66,0,5.66Z' },
+                        { id: 'O18', d: 'M75.44,346.07c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'O17', d: 'M92.29,329.76c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.88,2.01-1.98v-5.65c0-1.1-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.65Z' },
+                      ].map(path => (
+                        <path 
+                          key={path.id}
+                          id={path.id} 
+                          d={path.d} 
+                          fill={clickedStation === STATION_ID_TO_NAME[path.id] ? COLORS.active : (getStationStatus(path.id) === 'visited' ? COLORS.visited : (getStationStatus(path.id) === 'wish' ? COLORS.wish : 'transparent'))}
+                          stroke={clickedStation === STATION_ID_TO_NAME[path.id] ? 'var(--blue)' : 'transparent'}
+                          strokeWidth="1.2"
+                          onMouseEnter={() => setHoveredStation(STATION_ID_TO_NAME[path.id])}
+                          onMouseLeave={() => setHoveredStation(null)}
+                          onClick={(e) => { e.stopPropagation(); handlePathClick(path.id); }}
+                        />
+                      ))}
+{/* 紅線站點 */}
+                      {[
+                        { id: 'R28', d: 'M83.2,31.45h-3.51c-1.25,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.51c1.25,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                        { id: 'R27', d: 'M77.68,61.88c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.1-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'R22', d: 'M155,108.03c0,1.09.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'R22A', d: 'M160.32,80.29h-3.51c-1.25,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.51c1.25,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                        { id: 'R15', d: 'M223.33,201.45c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.1-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'R09', d: 'M223.25,353.57c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v5.66Z' },
+                        { id: 'R02', d: 'M400.13,366.68h-3.51c-1.25,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.51c1.25,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                      ].map(path => (
+                        <path key={path.id} id={path.id} d={path.d} 
+                          fill={clickedStation === STATION_ID_TO_NAME[path.id] ? COLORS.active : (getStationStatus(path.id) === 'visited' ? COLORS.visited : (getStationStatus(path.id) === 'wish' ? COLORS.wish : 'transparent'))}
+                          stroke={clickedStation === STATION_ID_TO_NAME[path.id] ? 'var(--blue)' : 'transparent'}
+                          strokeWidth="1.2"
+                          onMouseEnter={() => setHoveredStation(STATION_ID_TO_NAME[path.id])}
+                          onMouseLeave={() => setHoveredStation(null)}
+                          onClick={(e) => { e.stopPropagation(); handlePathClick(path.id); }}
+                        />
+                      ))}
 
-                    const hasVisited = stores.some(s => s.type === 'visited');
-                    const isSelected = activeStation === stationName;
+                      {/* 綠線站點 */}
+                      {[
+                        { id: 'G01', d: 'M304.45,540.43h-3.52c-1.24,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.52c1.24,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                        { id: 'G19', d: 'M422.58,286.1h-3.51c-1.25,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.51c1.24,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                      ].map(path => (
+                        <path key={path.id} id={path.id} d={path.d} 
+                          fill={clickedStation === STATION_ID_TO_NAME[path.id] ? COLORS.active : (getStationStatus(path.id) === 'visited' ? COLORS.visited : (getStationStatus(path.id) === 'wish' ? COLORS.wish : 'transparent'))}
+                          stroke={clickedStation === STATION_ID_TO_NAME[path.id] ? 'var(--blue)' : 'transparent'}
+                          strokeWidth="1.2"
+                          onMouseEnter={() => setHoveredStation(STATION_ID_TO_NAME[path.id])}
+                          onMouseLeave={() => setHoveredStation(null)}
+                          onClick={(e) => { e.stopPropagation(); handlePathClick(path.id); }}
+                        />
+                      ))}
 
-                    return (
-                      <div 
-                        key={stationName}
-                        onMouseEnter={() => setHoveredStation(stationName)}
-                        onMouseLeave={() => setHoveredStation(null)}
-                        style={{
-                          position: 'absolute',
-                          left: `${coords.x}%`,
-                          top: `${coords.y}%`,
-                          // Keep the center at the exact coordinate, but inverse scale it
-                          transform: `translate(-50%, -50%) scale(${inverseScale})`,
-                          transformOrigin: 'center center',
-                          zIndex: isSelected ? 200 : 150,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center'
-                        }}
-                      >
-                    {/* Visual Pin */}
-                    <div 
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setClickedStation(stationName === clickedStation ? null : stationName);
-                      }}
-                      style={{
-                        backgroundColor: (editMode && isSelected) ? '#FFD700' : (hasVisited ? 'var(--green)' : 'var(--red)'),
-                        color: '#fff',
-                        width: isSelected ? 28 : 22,
-                        height: isSelected ? 28 : 22,
-                        borderRadius: '50%',
-                        border: (editMode && isSelected) ? 'none' : '3px solid #fff',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        cursor: 'pointer',
-                        pointerEvents: 'auto',
-                        position: 'relative',
-                        zIndex: 2
-                      }}
-                    >
-                       <div style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%' }} />
-                    </div>
+                      {/* 藍線站點 */}
+                      {[
+                        { id: 'BL01', d: 'M88.26,521.61h-3.34c-1.18,0-2.15-.95-2.15-2.12v-5.38c0-1.17.97-2.12,2.15-2.12h3.34c1.18,0,2.15.95,2.15,2.12v5.38c0,1.17-.96,2.12-2.15,2.12' },
+                        { id: 'BL22', d: 'M479.04,306.57c0,1.1.9,1.98,2,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.65c0-1.09-.9-1.98-2.01-1.98h-3.51c-1.11,0-2,.89-2,1.98v5.65Z' },
+                      ].map(path => (
+                        <path key={path.id} id={path.id} d={path.d} 
+                          fill={clickedStation === STATION_ID_TO_NAME[path.id] ? COLORS.active : (getStationStatus(path.id) === 'visited' ? COLORS.visited : (getStationStatus(path.id) === 'wish' ? COLORS.wish : 'transparent'))}
+                          stroke={clickedStation === STATION_ID_TO_NAME[path.id] ? 'var(--blue)' : 'transparent'}
+                          strokeWidth="1.2"
+                          onMouseEnter={() => setHoveredStation(STATION_ID_TO_NAME[path.id])}
+                          onMouseLeave={() => setHoveredStation(null)}
+                          onClick={(e) => { e.stopPropagation(); handlePathClick(path.id); }}
+                        />
+                      ))}
 
-                    {/* Popup Modal right above the pin */}
-                    {isSelected && !editMode && (
-                      <div 
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          marginBottom: '8px',
-                          background: '#fff',
-                          borderRadius: 20,
-                          border: 'var(--bdr)',
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-                          padding: '16px',
-                          width: 280,
-                          animation: 'fadeup 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                          zIndex: 2000,
-                          pointerEvents: 'auto',
-                          cursor: 'default'
-                        }}
-                      >
-                        {/* Invisible bridge to cover the gap for hover */}
-                        <div style={{ position: 'absolute', bottom: -16, left: 0, right: 0, height: 16 }} />
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 20 }}>🍜</span>
-                            <h4 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>{stationName}</h4>
-                            <span className="sec-cnt" style={{ fontSize: 11, background: 'rgba(0,0,0,0.08)' }}>{stores.length} 間店家</span>
-                          </div>
-                          <button 
-                            onClick={() => { setClickedStation(null); setHoveredStation(null); }}
-                            style={{ background: 'var(--gray)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 200, overflowY: 'auto', paddingRight: 4 }}>
-                          {stores.map(st => (
-                            <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: '#f8f9fa', borderRadius: 12, border: '1px solid rgba(0,0,0,0.03)' }}>
-                              <span style={{ 
-                                fontSize: 10, 
-                                fontWeight: 800, 
-                                color: '#fff',
-                                background: st.type === 'visited' ? 'var(--green)' : 'var(--red)',
-                                padding: '3px 8px',
-                                borderRadius: 8,
-                                minWidth: 44,
-                                textAlign: 'center',
-                                textTransform: 'uppercase'
-                              }}>
-                                {st.type === 'visited' ? '已吃' : '想去'}
-                              </span>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{st.shop}</div>
-                                {st.style && <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{st.style}</div>}
-                              </div>
-                              {(st.type === 'visited' && st.visits?.[0]?.rating) && (
-                                <div style={{ fontSize: 13, background: 'var(--yellow-lt)', padding: '2px 6px', borderRadius: 6, border: '1px solid var(--yellow)' }}>
-                                  {'⭐'.repeat(st.visits[0].rating)}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </TransformComponent>
-            );
-          }}
-        </TransformWrapper>
-        </div>
-      
-        {/* Dev JSON output */}
-        {editMode && (
-          <div style={{ height: 180, background: '#1e1e1e', color: '#d4d4d4', padding: 12, fontFamily: 'monospace', fontSize: 12, overflow: 'auto', zIndex: 1000, position: 'relative' }}>
-            <div style={{ marginBottom: 8, color: '#9cdcfe' }}>
-              {clickedStation 
-                ? `📍 點擊地圖粗略定位「${clickedStation}」，再使用 WASD 或方向鍵微調（按住 Shift 可加速）...` 
-                : `👉 編輯模式：請先點擊地圖上的圖釘來選取它（圓圈變紫），然後再點擊圖上的確切位置來移動，支援鍵盤微調！`}
-            </div>
-            <textarea 
-              readOnly
-              value={`// 請將這段貼回 AI，或直接複製取代 STATION_COORDS:\nconst STATION_COORDS: Record<string, { x: number; y: number; lines: string[] }> = ${JSON.stringify(localCoords, null, 2).replace(/"x":/g, 'x:').replace(/"y":/g, 'y:').replace(/"lines":/g, 'lines:')};`}
-              style={{ width: '100%', height: 130, background: 'transparent', color: 'inherit', border: 'none', resize: 'none' }}
-            />
+                      {/* 棕線站點 */}
+                      {[
+                        { id: 'BR01', d: 'M436.64,460.77h-3.51c-1.24,0-2.26,1-2.26,2.23v5.66c0,1.23,1.01,2.23,2.26,2.23h3.51c1.25,0,2.26-1,2.26-2.23v-5.66c0-1.23-1.01-2.23-2.26-2.23' },
+                        { id: 'BR23', d: 'M507.49,280.81c0,1.1.9,1.98,2.01,1.98h3.51c1.11,0,2.01-.89,2.01-1.98v-5.66c0-1.1-.9-1.98-2.01-1.98h-3.51c-1.11,0-2.01.89-2.01,1.98v-5.66Z' },
+                      ].map(path => (
+                        <path key={path.id} id={path.id} d={path.d} 
+                          fill={clickedStation === STATION_ID_TO_NAME[path.id] ? COLORS.active : (getStationStatus(path.id) === 'visited' ? COLORS.visited : (getStationStatus(path.id) === 'wish' ? COLORS.wish : 'transparent'))}
+                          stroke={clickedStation === STATION_ID_TO_NAME[path.id] ? 'var(--blue)' : 'transparent'}
+                          strokeWidth="1.2"
+                          onMouseEnter={() => setHoveredStation(STATION_ID_TO_NAME[path.id])}
+                          onMouseLeave={() => setHoveredStation(null)}
+                          onClick={(e) => { e.stopPropagation(); handlePathClick(path.id); }}
+                        />
+                      ))}
+                    </g>
+                </svg>
+              </TransformComponent>
+            </TransformWrapper>
           </div>
-        )}
+        </div>
       </div>
+          
+      {/* Active Station Card Overlay */}
+      {clickedStation && (
+        <div style={{
+            position: 'absolute', top: 20, right: 20, background: '#fff', borderRadius: 20, border: 'var(--bdr)', 
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)', padding: '16px', width: 280, zIndex: 100, 
+            animation: 'fadeup 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+          }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>🍜</span>
+              <h4 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{clickedStation}</h4>
+              <span className="sec-cnt" style={{ fontSize: 11 }}>{(stationStores.get(clickedStation) || []).length} 間店家</span>
+            </div>
+            <button onClick={() => setClickedStation(null)}
+              style={{ background: 'var(--gray)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ✕
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+            {(stationStores.get(clickedStation) || []).map(st => (
+              <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: '#f8f9fa', borderRadius: 12, border: '1px solid rgba(0,0,0,0.03)' }}>
+                <span style={{ 
+                  fontSize: 10, fontWeight: 800, color: '#fff',
+                  background: st.type === 'visited' ? 'var(--green)' : 'var(--red)',
+                  padding: '3px 8px', borderRadius: 8, minWidth: 44, textAlign: 'center'
+                }}>
+                  {st.type === 'visited' ? '已吃' : '想去'}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>{st.shop}</div>
+                  {st.style && <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{st.style}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

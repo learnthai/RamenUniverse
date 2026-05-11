@@ -17,7 +17,7 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
   const filterLabels: Record<string, string> = {
     station: '捷運站',
     shop: '店家',
-    style: '系別',
+    style: '湯系',
     season: '調味'
   };
 

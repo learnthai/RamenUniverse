@@ -19,20 +19,35 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
   const filterLabels: Record<string, string> = {
     station: '捷運站',
     shop: '店家',
-    style: '系別',
-    season: '調味'
+    style: '湯系',
+    season: '調味',
+    rating: '星級'
   };
 
   const getOptions = (type: string) => {
-    let opts: string[] = [];
-    if (type === 'station') opts = [...new Set(visited.map(c => c.station).filter(Boolean) as string[])];
-    if (type === 'shop') opts = [...new Set(visited.map(c => c.shop))];
-    if (type === 'style') opts = [...new Set(visited.map(c => c.style).filter(Boolean) as string[])];
-    if (type === 'season') {
-      const sea = visited.flatMap(c => (c.visits || []).map(v => v.season).filter(Boolean) as string[]);
-      opts = [...new Set(sea)];
+    const set = new Set<string>();
+    if (type === 'station') {
+      visited.forEach(c => { if (c.station) set.add(c.station); });
     }
-    return opts.sort();
+    if (type === 'shop') {
+      visited.forEach(c => { if (c.shop) set.add(c.shop); });
+    }
+    if (type === 'style') {
+      visited.forEach(c => {
+        if (c.style) set.add(c.style);
+        if (c.visits) c.visits.forEach(v => { if (v.style) set.add(v.style); });
+      });
+    }
+    if (type === 'season') {
+      visited.forEach(c => {
+        if (c.season) set.add(c.season);
+        if (c.visits) c.visits.forEach(v => { if (v.season) set.add(v.season); });
+      });
+    }
+    if (type === 'rating') {
+      return ['5', '4', '3', '2', '1'];
+    }
+    return Array.from(set).sort();
   };
 
   const items = useMemo(() => {
@@ -47,8 +62,16 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
     if (filterValue && filterType) {
       if (filterType === 'station') res = res.filter(c => c.station === filterValue);
       if (filterType === 'shop') res = res.filter(c => c.shop === filterValue);
-      if (filterType === 'style') res = res.filter(c => c.style === filterValue);
-      if (filterType === 'season') res = res.filter(c => (c.visits || []).some(v => v.season === filterValue));
+      if (filterType === 'style') res = res.filter(c => c.style === filterValue || (c.visits && c.visits.some(v => v.style === filterValue)));
+      if (filterType === 'season') res = res.filter(c => c.season === filterValue || (c.visits && c.visits.some(v => v.season === filterValue)));
+      if (filterType === 'rating') {
+        const val = Number(filterValue);
+        res = res.filter(c => {
+          const visits = c.visits && c.visits.length > 0 ? c.visits : [];
+          if (visits.length === 0) return (c.rating || 0) === val;
+          return visits.some(v => v.rating === val);
+        });
+      }
     }
     return res;
   }, [visited, q, filterType, filterValue]);
@@ -164,7 +187,6 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
                       </div>
                     </div>
                     <div className="ctags">
-                      {c.style && <span className="ctag sty">{c.style}</span>}
                       {c.station && <span className="ctag sta">🚇 {c.station}</span>}
                     </div>
                     <div className="visits-wrap">
@@ -172,9 +194,12 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
                         <div key={idx} className="visit-entry">
                           <div className="ve-top">
                             <Stars num={v.rating} />
-                            <div className="ve-item" style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                            <div className="ve-item" style={{display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap'}}>
                               {v.item || '—'}
-                              {v.season && <span className="ve-tag">{v.season}</span>}
+                              <div style={{display: 'flex', gap: 4, flexWrap: 'wrap'}}>
+                                {v.style && <span className="ve-tag" style={{background: 'var(--purple-lt)', color: 'var(--purple)', border: '1px solid rgba(124,92,191,0.28)'}}>{v.style}</span>}
+                                {v.season && <span className="ve-tag">{v.season}</span>}
+                              </div>
                             </div>
                           </div>
                           {v.comment && <div className="ve-comment">「{v.comment}」</div>}

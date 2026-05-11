@@ -1,14 +1,67 @@
 import { useState, useEffect } from 'react';
 import { AppState, RamenCard } from './types';
+import explicitVisits from './new_visits.json';
 
 const SK = 'ramen_desu_v4';
 
 const defaultState: AppState = {
   wish: [],
   visited: [],
-  styles: ['橫濱家系', '二郎系', '泡系', '沾麵', '魚介系', '淡麗系'],
-  seasons: ['豚骨', '鹽味', '味增', '雞白湯']
+  styles: ['橫濱家系', '二郎', '泡系', '沾麵', '魚介', '淡麗', '海鮮', '煮干'],
+  seasons: ['豚骨', '鹽味', '味增', '醬油', '雞白湯', '牛骨白湯', '雞清湯', '鴨白湯']
 };
+
+function normalizeCard(c: RamenCard): RamenCard {
+  const STYLES = ['橫濱家系', '二郎', '泡系', '沾麵', '魚介', '淡麗', '海鮮', '煮干'];
+  const SEASONS = ['豚骨', '鹽味', '味增', '醬油', '雞白湯', '牛骨白湯', '雞清湯', '鴨白湯'];
+
+  const norm = (s: string | undefined) => {
+    if (!s) return '';
+    let val = s.trim();
+    if (val.includes('雞白')) return '雞白湯';
+    if (val.includes('味增') || val.includes('味噌')) return '味增';
+    if (val === '家系' || val.includes('橫濱家系')) return '橫濱家系';
+    if (val.includes('海鮮')) return '海鮮';
+    if (val.includes('魚介')) return '魚介';
+    if (val.includes('淡麗')) return '淡麗';
+    if (val.includes('煮干')) return '煮干';
+    if (val.includes('醬油')) return '醬油';
+    if (val.includes('豚骨')) return '豚骨';
+    if (val.includes('鹽味')) return '鹽味';
+    return val;
+  };
+
+  const classify = (styleIn: string | undefined, seasonIn: string | undefined) => {
+    let s = norm(styleIn);
+    let sea = norm(seasonIn);
+    
+    let finalStyle = '';
+    let finalSeason = '';
+
+    [s, sea].forEach(v => {
+      if (STYLES.includes(v)) finalStyle = v;
+      if (SEASONS.includes(v)) finalSeason = v;
+    });
+
+    return { style: finalStyle, season: finalSeason };
+  };
+
+  const { style, season } = classify(c.style, c.season);
+  
+  return {
+    ...c,
+    style,
+    season,
+    visits: (c.visits || []).map(v => {
+      const vClass = classify(v.style, v.season);
+      return {
+        ...v,
+        style: vClass.style || style,
+        season: vClass.season || season
+      };
+    })
+  };
+}
 
 const DUMMY_RAW = `✓ ⚡貝系湯底 /墨洋 (極上貝貝)  →公館站 叉燒飯讚 湯鮮甜👍🏾👍🏾
  ✓ ⚡豚骨湯底 / 真劍 (豚骨拉麵) →台電大樓站 👍🏾👍🏾
@@ -99,33 +152,35 @@ function parseMigrationData() {
     line = line.replace(/👍🏾/g, '').trim();
     
     let shop = '';
-    let style = '';
+    let style = '拉麵'; // Default
     let station = '';
     let item = '';
     let comment = '';
     
-    if (line.includes('（雞白湯）')) {
-      shop = '數寄屋'; style = '雞白湯';
-      let stMatch = line.match(/→\s*(.*)$/);
-      if (stMatch) station = stMatch[1].trim();
-    } else if (line.includes('/')) {
+    // 1. Extract station (→)
+    if (line.includes('→')) {
+      let parts = line.split('→');
+      station = parts[1].trim();
+      line = parts[0].trim();
+    }
+    
+    // 2. Extract item (brackets)
+    let itMatch = line.match(/\((.*?)\)/);
+    if (itMatch) {
+      item = itMatch[1].trim();
+      line = line.replace(/\(.*\)/, '').trim();
+    }
+
+    // 3. Extract style (/)
+    if (line.includes('/')) {
       let parts = line.split('/');
       style = parts[0].replace('湯底', '').replace('系', '').trim();
-      let right = parts.slice(1).join('/');
-      let stMatch = right.match(/→\s*(.*?)$/);
-      if (stMatch) {
-        station = stMatch[1].trim();
-        right = right.replace(/→.*$/, '').trim();
-      }
-      let itMatch = right.match(/\((.*?)\)/);
-      if (itMatch) {
-        item = itMatch[1].trim();
-        right = right.replace(/\(.*\)/, '').trim();
-      }
-      shop = right.trim();
+      shop = parts.slice(1).join('/').trim();
     } else {
-      continue;
+      shop = line.trim();
     }
+    
+    if (!shop) continue;
     
     if (station.includes(' ')) {
       let sp = station.split(' ');
@@ -134,7 +189,6 @@ function parseMigrationData() {
     }
     
     station = station.replace(/站$/, '').trim();
-    if (!shop || !style) continue;
     
     if (shop === '丸舢') {
       comment = '鹽：👍🏾 👍🏾';
@@ -170,18 +224,84 @@ export const useStore = () => {
         currentState = JSON.parse(d);
       }
       
-      const migrated = localStorage.getItem('migrated_v5');
+      const migrated = localStorage.getItem('migrated_v12_restore_full');
       if (!migrated) {
         const { wishes, visits } = parseMigrationData();
+        
+        const getScore = (item: any) => {
+          let score = 0;
+          // Favor content heavily
+          if (item.comment && item.comment.trim() !== '') score += 50;
+          if (item.style && item.style !== '' && item.style !== '拉麵') score += 10;
+          if (item.season && item.season !== '') score += 10;
+          if (item.station && item.station !== '') score += 5;
+          if (item.visits && item.visits.length > 0) {
+            score += 100; // Anything with visit history is high priority
+            const last = item.visits[item.visits.length - 1];
+            if (last.comment && last.comment.trim() !== '') score += 50;
+            if (last.rating && last.rating > 0) score += (last.rating * 10);
+            if (last.season && last.season !== '') score += 10;
+            if (last.item && last.item !== '') score += 10;
+          }
+          return score;
+        };
+
+        const mergeRecovery = (existing: any[], incoming: any[]) => {
+          const map = new Map<string, any>();
+          
+          // Granular Key: shop name + style
+          const getKey = (item: any) => `${item.shop.trim().toLowerCase()}|${(item.style || '').trim().toLowerCase()}`;
+
+          // 1. Process legacy data
+          incoming.forEach(item => {
+            map.set(getKey(item), item);
+          });
+          
+          // 2. Overwrite with existing user data if score is better OR equal
+          // (This keeps user edits while filling gaps from legacy)
+          existing.forEach(item => {
+            const key = getKey(item);
+            const current = map.get(key);
+            if (!current || getScore(item) >= getScore(current)) {
+              map.set(key, item);
+            }
+          });
+          
+          return Array.from(map.values());
+        };
+
         currentState = {
           ...currentState,
-          wish: [...currentState.wish, ...wishes],
-          visited: [...currentState.visited, ...visits]
+          wish: mergeRecovery(currentState.wish, wishes),
+          visited: mergeRecovery(currentState.visited, visits),
+          styles: currentState.styles && currentState.styles.length > 0 ? currentState.styles : defaultState.styles,
+          seasons: currentState.seasons && currentState.seasons.length > 0 ? currentState.seasons : defaultState.seasons
         };
-        localStorage.setItem('migrated_v5', '1');
+        
+        localStorage.setItem('migrated_v12_restore_full', '1');
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
       
+      const migrated13 = localStorage.getItem('migrated_v13_explicit');
+      if (!migrated13) {
+        currentState.visited = (explicitVisits as any).map(normalizeCard);
+        currentState.styles = defaultState.styles;
+        currentState.seasons = defaultState.seasons;
+        localStorage.setItem('migrated_v13_explicit', '1');
+        localStorage.setItem(SK, JSON.stringify(currentState));
+      }
+
+      // V14 Cleanup: Force normalize all existing data to fix mistakes like "雞白" in style
+      const migrated14 = localStorage.getItem('migrated_v14_cleanup_v3');
+      if (!migrated14) {
+        currentState.visited = (currentState.visited || []).map(normalizeCard);
+        currentState.wish = (currentState.wish || []).map(normalizeCard);
+        currentState.styles = defaultState.styles;
+        currentState.seasons = defaultState.seasons;
+        localStorage.setItem('migrated_v14_cleanup_v3', '1');
+        localStorage.setItem(SK, JSON.stringify(currentState));
+      }
+
       setState(currentState);
     } catch (e) {}
     setLoaded(true);

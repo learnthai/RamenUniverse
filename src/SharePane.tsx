@@ -3,14 +3,16 @@ import { useStore } from './store';
 import { ICONS } from './constants';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import LZString from 'lz-string';
 
 export function SharePane() {
   const { state } = useStore();
   
-  const [filterType, setFilterType] = useState<'wish' | 'visited'>('wish');
+  const [filterType, setFilterType] = useState<'wish' | 'visited'>('visited');
   const [filterStation, setFilterStation] = useState<string>('all');
   const [filterSoup, setFilterSoup] = useState<string>('all');
   const [filterFlavor, setFilterFlavor] = useState<string>('all');
+  const [filterRating, setFilterRating] = useState<string>('all');
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -18,25 +20,43 @@ export function SharePane() {
   const exportData = useMemo(() => {
     let list = filterType === 'wish' ? state.wish : state.visited;
     if (filterStation !== 'all') list = list.filter(s => s.station === filterStation);
-    if (filterSoup !== 'all') list = list.filter(s => s.style === filterSoup);
-    if (filterFlavor !== 'all') list = list.filter(s => s.season === filterFlavor);
+    if (filterSoup !== 'all') {
+      list = list.filter(s => s.style === filterSoup || (s.visits && s.visits.some(v => v.style === filterSoup)));
+    }
+    if (filterFlavor !== 'all') {
+      list = list.filter(s => s.season === filterFlavor || (s.visits && s.visits.some(v => v.season === filterFlavor)));
+    }
+    if (filterRating !== 'all' && filterType === 'visited') {
+      const val = Number(filterRating);
+      list = list.filter(s => {
+        const visits = (s as any).visits || [];
+        return visits.some((v: any) => v.rating === val);
+      });
+    }
     return list;
-  }, [state, filterType, filterStation, filterSoup, filterFlavor]);
+  }, [state, filterType, filterStation, filterSoup, filterFlavor, filterRating]);
 
-  const uniqueStations = useMemo(() => Array.from(new Set((filterType === 'wish' ? state.wish : state.visited).map(s => s.station).filter(Boolean))), [state, filterType]);
+  const uniqueStations = useMemo(() => Array.from(new Set([...state.wish, ...state.visited].map(s => s.station).filter(Boolean))), [state]);
 
   const uniqueSoups = useMemo(() => {
-    let list = filterType === 'wish' ? state.wish : state.visited;
-    if (filterStation !== 'all') list = list.filter(s => s.station === filterStation);
-    return Array.from(new Set(list.map(s => s.style).filter(Boolean)));
-  }, [state, filterType, filterStation]);
+    const list = [...state.wish, ...state.visited];
+    const set = new Set<string>();
+    list.forEach(s => {
+      if (s.style) set.add(s.style);
+      if (s.visits) s.visits.forEach(v => { if (v.style) set.add(v.style); });
+    });
+    return Array.from(set).sort();
+  }, [state]);
 
   const uniqueFlavors = useMemo(() => {
-    let list = filterType === 'wish' ? state.wish : state.visited;
-    if (filterStation !== 'all') list = list.filter(s => s.station === filterStation);
-    if (filterSoup !== 'all') list = list.filter(s => s.style === filterSoup);
-    return Array.from(new Set(list.map(s => s.season).filter(Boolean)));
-  }, [state, filterType, filterStation, filterSoup]);
+    const list = [...state.wish, ...state.visited];
+    const set = new Set<string>();
+    list.forEach(s => {
+      if (s.season) set.add(s.season);
+      if (s.visits) s.visits.forEach(v => { if (v.season) set.add(v.season); });
+    });
+    return Array.from(set).sort();
+  }, [state]);
 
   React.useEffect(() => {
     if (filterSoup !== 'all' && !uniqueSoups.includes(filterSoup)) setFilterSoup('all');
@@ -87,29 +107,49 @@ export function SharePane() {
   };
 
   const handleExportLink = async () => {
-    // Generate a encoded URL with current state to share
-    const data = JSON.stringify({
-      list: filterType,
-      data: exportData.map(d => {
-        let avgRating = undefined;
-        if ((d as any).visits && (d as any).visits.length > 0) {
-          avgRating = ((d as any).visits.reduce((acc: number, cur: any) => acc + (cur.rating || 0), 0) / (d as any).visits.length).toFixed(1);
+    // Generate a highly compact structure for sharing
+    // Uses indexing for styles and seasons to save space
+    const stylesIndex = state.styles;
+    const seasonsIndex = state.seasons;
+
+    const compactData = {
+      t: filterType,
+      s: stylesIndex,
+      se: seasonsIndex,
+      d: exportData.map(d => {
+        let avgRating = "";
+        const visits = (d as any).visits || [];
+        if (visits.length > 0) {
+          avgRating = (visits.reduce((acc: number, cur: any) => acc + (cur.rating || 0), 0) / visits.length).toFixed(1);
         }
-        return {
-          n: d.shop,
-          s: d.station,
-          sp: d.style,
-          f: d.season,
-          r: avgRating,
-          v: (d as any).visits?.length
-        };
+        
+        const styleIdx = stylesIndex.indexOf(d.style || '');
+        const seasonIdx = seasonsIndex.indexOf(d.season || '');
+        
+        let comment = filterType === 'visited' ? visits[visits.length - 1]?.comment : d.comment;
+        if (comment && comment.length > 30) comment = comment.substring(0, 30) + '...';
+
+        return [
+          d.shop,                     // 0: Name
+          d.station || "",            // 1: MRT
+          styleIdx > -1 ? styleIdx : (d.style || ""), // 2: Style (index or string)
+          seasonIdx > -1 ? seasonIdx : (d.season || ""), // 3: Season (index or string)
+          avgRating,                  // 4: Rating
+          comment || ""               // 5: Comment
+        ];
       })
-    });
+    };
+
+    const json = JSON.stringify(compactData);
     
-    // Simple compression via base64
     try {
-      const payload = btoa(encodeURIComponent(data));
+      const payload = LZString.compressToEncodedURIComponent(json);
       const url = `${window.location.origin}${window.location.pathname}?share=${payload}`;
+
+      if (url.length > 7800) {
+        showToast('⚠️ 資料量過大，請多利用篩選縮小範圍');
+        return;
+      }
       
       const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
       const resJson = await res.json();
@@ -121,7 +161,7 @@ export function SharePane() {
         showToast('短網址服務暫時失效，已複製完整連結！');
       }
     } catch (e) {
-      showToast('無法產生連結資料過大');
+      showToast('產生連結失敗');
     }
   };
 
@@ -133,36 +173,50 @@ export function SharePane() {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>來源類別</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>來源類別</span>
             <div className="fchips" style={{ margin: 0 }}>
-              <div className={`fchip ${filterType === 'wish' ? 'on c-wish' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilterType('wish')}>想去清單 ({state.wish.length})</div>
               <div className={`fchip ${filterType === 'visited' ? 'on c-visited' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilterType('visited')}>已吃清單 ({state.visited.length})</div>
+              <div className={`fchip ${filterType === 'wish' ? 'on c-wish' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilterType('wish')}>想去清單 ({state.wish.length})</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3, marginTop: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>捷運站</span>
-            <select className="inp" style={{ flex: 1, padding: '8px 12px 8px 12px', border: '1.5px solid var(--gray-mid)', borderRadius: 5, background: '#fff', marginLeft: 0, marginRight: 30 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>捷運站</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterStation} onChange={e => setFilterStation(e.target.value)}>
               <option value="all">全部捷運站</option>
               {uniqueStations.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>湯系</span>
-            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-mid)', borderRadius: 5, background: '#fff', marginRight: 30 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>湯系</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterSoup} onChange={e => setFilterSoup(e.target.value)}>
               <option value="all">全部湯系</option>
               {uniqueSoups.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 60 }}>調味</span>
-            <select className="inp" style={{ flex: 1, padding: '8px 12px', border: '1.5px solid var(--gray-mid)', borderRadius: 5, background: '#fff', marginRight: 30 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>調味</span>
+            <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterFlavor} onChange={e => setFilterFlavor(e.target.value)}>
               <option value="all">全部調味</option>
               {uniqueFlavors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+
+          {filterType === 'visited' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 3 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', width: 70 }}>星級</span>
+              <select className="fsel" style={{ flex: 1, marginRight: 8 }} value={filterRating} onChange={e => setFilterRating(e.target.value)}>
+                <option value="all">全部星級</option>
+                <option value="5">5 顆星 ★★★★★</option>
+                <option value="4">4 顆星 ★★★★</option>
+                <option value="3">3 顆星 ★★★</option>
+                <option value="2">2 顆星 ★★</option>
+                <option value="1">1 顆星 ★</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -182,11 +236,16 @@ export function SharePane() {
                     )}
                   </div>
                     <div style={{ display: 'flex', gap: 6, fontSize: 12, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px' }}>🚇 {item.station}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 13, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '26px' }}>{item.style}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 13, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '26px' }}>{item.season}</div>
-                      {filterType === 'visited' && item.visits && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: '#ffefef', color: '#d92c2c', borderRadius: 13, border: '1px solid #f5b7b1', lineHeight: '26px' }}>吃過 {item.visits.length} 次</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 13, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '26px' }}>🚇 {item.station || '—'}</div>
+                      {(item.style || (item.visits && item.visits[0]?.style)) && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 13, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '26px' }}>
+                          {item.style || item.visits[0]?.style}
+                        </div>
+                      )}
+                      {(item.season || (item.visits && item.visits[0]?.season)) && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 26, padding: '0 10px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 13, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '26px' }}>
+                          {item.season || item.visits[0]?.season}
+                        </div>
                       )}
                     </div>
                     {((filterType === 'visited' && item.visits?.[item.visits.length - 1]?.comment) || item.comment) && (
@@ -228,6 +287,7 @@ export function SharePane() {
             {filterStation !== 'all' && <span>📍 {filterStation}</span>}
             {filterSoup !== 'all' && <span>🍲 {filterSoup}</span>}
             {filterFlavor !== 'all' && <span>🧂 {filterFlavor}</span>}
+            {filterRating !== 'all' && <span>★ {filterRating}</span>}
             <span>共 {exportData.length} 間</span>
           </div>
 
@@ -245,11 +305,16 @@ export function SharePane() {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 8, fontSize: 13, color: '#444', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 14, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '28px' }}>🚇 {item.station}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 14, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '28px' }}>{item.style}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 14, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '28px' }}>{item.season}</div>
-                      {filterType === 'visited' && item.visits && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: '#ffefef', color: '#d92c2c', borderRadius: 14, border: '1px solid #f5b7b1', lineHeight: '28px' }}>吃過 {item.visits.length} 次</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--yellow-lt)', color: '#8A6900', borderRadius: 14, border: '1px solid rgba(245,200,66,0.38)', lineHeight: '28px' }}>🚇 {item.station || '—'}</div>
+                      {(item.style || (item.visits && item.visits[0]?.style)) && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--purple-lt)', color: 'var(--purple)', borderRadius: 14, border: '1px solid rgba(124,92,191,0.28)', lineHeight: '28px' }}>
+                          {item.style || item.visits[0]?.style}
+                        </div>
+                      )}
+                      {(item.season || (item.visits && item.visits[0]?.season)) && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 28, padding: '0 12px', background: 'var(--blue-lt)', color: 'var(--blue)', borderRadius: 14, border: '1px solid rgba(74,142,194,0.28)', lineHeight: '28px' }}>
+                          {item.season || item.visits[0]?.season}
+                        </div>
                       )}
                     </div>
                     {((filterType === 'visited' && item.visits?.[item.visits.length - 1]?.comment) || item.comment) && (

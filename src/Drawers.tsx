@@ -57,34 +57,51 @@ export function Drawers({
 
   const submitVisited = () => {
     if (!form.shop) return showToast('⚠️ 請填入店名');
-    if (!form.item) return showToast('⚠️ 請填入食用品項');
+    
+    // Only require item if we are adding a NEW visit
+    const isAddingVisit = drawer === 'visited' || drawer === 'addVisit';
+    if (isAddingVisit && !form.item) return showToast('⚠️ 請填入食用品項');
     
     save(prev => {
       const vDate = new Date().toLocaleDateString('zh-TW');
-      const newVisit: Visit = { item: form.item, rating: stars, comment: form.comment, season: form.season, style: form.style, id: uid() };
-      
       const visited = [...prev.visited];
+      
+      const newVisit: Visit | null = isAddingVisit ? { 
+        item: form.item, 
+        rating: stars, 
+        comment: form.comment, 
+        season: form.season, 
+        style: form.style, 
+        id: uid() 
+      } : null;
+
       if (form.id && drawer === 'editCard') {
         const idx = visited.findIndex(v => v.id === form.id);
         if (idx > -1) {
           visited[idx] = { ...visited[idx], shop: form.shop, station: form.station, style: form.style };
+        }
+      } else if (drawer === 'addVisit') {
+        const idx = visited.findIndex(v => v.id === form.id);
+        if (idx > -1 && newVisit) {
           if (!visited[idx].visits) visited[idx].visits = [];
           visited[idx].visits.push(newVisit);
         }
       } else {
-        const existIdx = visited.findIndex(x => x.shop === form.shop);
-        if (existIdx > -1) {
+        // Adding new shop + initial visit
+        const existIdx = visited.findIndex(x => x.shop.trim() === form.shop.trim() && (x.style === form.style || !x.style));
+        if (existIdx > -1 && newVisit) {
           if (!visited[existIdx].visits) visited[existIdx].visits = [];
           visited[existIdx].visits.push(newVisit);
           if (form.station) visited[existIdx].station = form.station;
-        } else {
+          if (form.style) visited[existIdx].style = form.style;
+        } else if (newVisit) {
           visited.unshift({ id: uid(), shop: form.shop, style: form.style, station: form.station, visits: [newVisit], visitedAt: vDate });
         }
       }
       return { ...prev, visited };
     });
     onClose();
-    showToast(form.id ? '✏️ 已新增再訪記錄！' : '✅ 加入已吃清單！');
+    showToast(form.id ? '✏️ 已更新！' : '✅ 加入已吃清單！');
   };
 
   const confirmVisited = () => {
@@ -173,7 +190,7 @@ export function Drawers({
           <div className="fg"><label className="flbl">店名 <span className="req">＊</span></label><input className="fi" value={form.shop || ''} onChange={e => update('shop', e.target.value)} /></div>
           <div className="fg"><label className="flbl">招牌拉麵 <span className="opt">選填</span></label><input className="fi" value={form.item || ''} onChange={e => update('item', e.target.value)} /></div>
           <div className="f2">
-            <div className="fg"><label className="flbl">拉麵系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div className="fg"><label className="flbl">湯系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="fg"><label className="flbl">調味</label><select className="fsel" value={form.season || ''} onChange={e => update('season', e.target.value)}><option value="">選擇</option>{state.seasons.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
           </div>
           <div className="fg"><label className="flbl">捷運站</label><MrtSelector /></div>
@@ -193,7 +210,7 @@ export function Drawers({
           <div className="fg"><label className="flbl">店名 <span className="req">＊</span></label><input className="fi" value={form.shop || ''} onChange={e => update('shop', e.target.value)} disabled={drawer === 'addVisit'} /></div>
           <div className="fg"><label className="flbl">食用品項 <span className="req">＊</span></label><input className="fi" value={form.item || ''} onChange={e => update('item', e.target.value)} /></div>
           <div className="f2">
-            <div className="fg"><label className="flbl">拉麵系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)} disabled={drawer === 'addVisit'}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div className="fg"><label className="flbl">湯系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)} disabled={drawer === 'addVisit'}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="fg"><label className="flbl">調味</label><select className="fsel" value={form.season || ''} onChange={e => update('season', e.target.value)}><option value="">選擇</option>{state.seasons.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
           </div>
           <div className="fg"><label className="flbl">捷運站</label><MrtSelector /></div>
@@ -214,7 +231,7 @@ export function Drawers({
           <div className="conf-card"><div className="conf-shop">{form.shop}</div><div className="conf-sub">{form.station ? `🚇 ${form.station}` : ''}{form.style ? ` · ${form.style}` : ''}</div></div>
           <div className="fg"><label className="flbl">食用品項 <span className="req">＊</span></label><input className="fi" value={form.item || ''} onChange={e => update('item', e.target.value)} /></div>
           <div className="f2">
-            <div className="fg"><label className="flbl">拉麵系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div className="fg"><label className="flbl">湯系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="fg"><label className="flbl">調味</label><select className="fsel" value={form.season || ''} onChange={e => update('season', e.target.value)}><option value="">選擇</option>{state.seasons.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
           </div>
           <div className="fg"><label className="flbl">評分 <span className="opt">選填</span></label>{renderStars()}</div>
@@ -233,7 +250,7 @@ export function Drawers({
          <div className="drw-body">
             <div className="fg"><label className="flbl">食用品項 <span className="req">＊</span></label><input className="fi" value={form.item || ''} onChange={e => update('item', e.target.value)} /></div>
             <div className="f2">
-              <div className="fg"><label className="flbl">拉麵系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+              <div className="fg"><label className="flbl">湯系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
               <div className="fg"><label className="flbl">調味</label><select className="fsel" value={form.season || ''} onChange={e => update('season', e.target.value)}><option value="">選擇</option>{state.seasons.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
             </div>
             <div className="fg"><label className="flbl">評分</label>{renderStars()}</div>
@@ -250,7 +267,7 @@ export function Drawers({
           <button className="drw-close" onClick={onClose}>✕</button>
         </div>
         <div className="drw-body">
-           <div className="mng-sec">拉麵系</div>
+           <div className="mng-sec">湯系</div>
            <div className="mng-list">
               {state.styles.map((s, idx) => (
                  <div key={idx} className="mng-item"><span>{s}</span><button className="mng-del" onClick={() => save(p => ({...p, styles: p.styles.filter((_, i) => i !== idx)}))}>✕ 刪除</button></div>
@@ -258,7 +275,7 @@ export function Drawers({
               {state.styles.length === 0 && <div style={{fontSize: 12, color: 'var(--ink-soft)'}}>尚無項目</div>}
            </div>
            <div className="mng-add-row">
-              <input className="fi" placeholder="新增拉麵系..." value={form.newStyle || ''} onChange={e => update('newStyle', e.target.value)} />
+              <input className="fi" placeholder="新增湯系..." value={form.newStyle || ''} onChange={e => update('newStyle', e.target.value)} />
               <button className="mbtn" onClick={() => { if(form.newStyle) { save(p => ({...p, styles: [...p.styles, form.newStyle]})); update('newStyle', ''); showToast('✅ 已新增！') } }}>＋ 新增</button>
            </div>
 

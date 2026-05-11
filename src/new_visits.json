@@ -1,0 +1,914 @@
+[
+  {
+    "id": "gzrr90x",
+    "shop": "墨洋",
+    "style": "海鮮",
+    "station": "公館",
+    "visits": [
+      {
+        "id": "9kzkvie",
+        "item": "極上柚香貝貝拉麵",
+        "rating": 2,
+        "comment": "叉燒飯讚 湯鮮甜 可免費加麵",
+        "style": "海鮮",
+        "season": "鹽味"
+      }
+    ]
+  },
+  {
+    "id": "u91spah",
+    "shop": "真劍",
+    "style": "",
+    "station": "台電大樓",
+    "visits": [
+      {
+        "id": "nfudshi",
+        "item": "鹽味翠雞拉麵",
+        "rating": 2,
+        "comment": "藍色雞湯麵 中規中矩 喜歡他的塘心蛋",
+        "style": "",
+        "season": "鹽味"
+      }
+    ]
+  },
+  {
+    "id": "0heem4w",
+    "shop": "Soba Shinn & 柑橘",
+    "style": "",
+    "station": "忠孝敦化",
+    "visits": [
+      {
+        "id": "77u39f5",
+        "item": "柑橘蛤蜊雞白湯 濃厚",
+        "rating": 4,
+        "comment": "湯頭柑橘香濃厚 麵條硬度剛好 塘心蛋有半熟 叉燒薄透好入口",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "lnegdjc",
+    "shop": "麵屋壹慶",
+    "style": "泡系",
+    "station": "中山國小",
+    "visits": [
+      {
+        "id": "3naykb3",
+        "item": "豚骨鹽味",
+        "rating": 4,
+        "comment": "泡系綿密好喝 叉燒和舒肥雞都很嫩 麵條吸附湯汁入味 清湯醬油很日系清爽",
+        "style": "泡系",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "ydd2uye",
+    "shop": "鬼金棒",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "pqm0hwk",
+        "item": "特製麻辣味增拉麵",
+        "rating": 3,
+        "comment": "想吃麻辣來就對了 麻跟辣都可以分開選級別",
+        "style": "",
+        "season": "味增"
+      }
+    ]
+  },
+  {
+    "id": "iegq86i",
+    "shop": "麵屋壹之穴",
+    "style": "煮干",
+    "station": "國父紀念館站",
+    "visits": [
+      {
+        "id": "47qvaah",
+        "item": "豚骨煮干拉麵",
+        "rating": 2,
+        "comment": "hen濃 偏鹹",
+        "style": "煮干",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "p4tc5qp",
+    "shop": "鷹流東京拉麵",
+    "style": "橫濱家系",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "w44rnbx",
+        "item": "",
+        "rating": 2,
+        "comment": "超級濃到已經快像沾麵",
+        "style": "橫濱家系",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "yjggil8",
+    "shop": "懸日",
+    "style": "",
+    "station": "板橋",
+    "visits": [
+      {
+        "id": "v8gpkge",
+        "item": "蕉味增",
+        "rating": 3,
+        "comment": "蕉味不明顯 味增感濃厚",
+        "style": "",
+        "season": "味增"
+      }
+    ]
+  },
+  {
+    "id": "nze3ar5",
+    "shop": "塩琉拉麵",
+    "style": "海鮮",
+    "station": "北車",
+    "visits": [
+      {
+        "id": "3jz2pbj",
+        "item": "干貝龍蝦濃湯",
+        "rating": 2,
+        "comment": "湯頭很鮮 配置都不錯吃",
+        "style": "海鮮",
+        "season": "鹽味"
+      }
+    ]
+  },
+  {
+    "id": "8atq1x0",
+    "shop": "山嵐",
+    "style": "",
+    "station": "古亭",
+    "visits": [
+      {
+        "id": "t9tzp1r",
+        "item": "赤湯豚骨",
+        "rating": 3,
+        "comment": "豚骨濃厚甘醇 不會太油的背鰭量 叉燒很嫩",
+        "style": "",
+        "season": "豚骨"
+      },
+      {
+        "id": "eq5in56",
+        "item": "海湯豐盛",
+        "rating": 3,
+        "comment": "不會太鹹太腥 有層次的海湯",
+        "style": "魚介",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "hkzc9vn",
+    "shop": "二屋",
+    "style": "海鮮",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "7qgmwxg",
+        "item": "鹽味濃厚牡蠣拉麵",
+        "rating": 1,
+        "comment": "吃到後面有點膩 可嘗試一次",
+        "style": "海鮮",
+        "season": "鹽味"
+      }
+    ]
+  },
+  {
+    "id": "a36yudt",
+    "shop": "旨燕",
+    "style": "泡系",
+    "station": "西門",
+    "visits": [
+      {
+        "id": "zpzh3o9",
+        "item": "泡系禽白湯",
+        "rating": 1,
+        "comment": "泡系不明顯 湯沒啥層次 吃完就忘",
+        "style": "泡系",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "mks0faa",
+    "shop": "拉麵公子",
+    "style": "煮干",
+    "station": "南京復興",
+    "visits": [
+      {
+        "id": "7o9d4nc",
+        "item": "濃厚煮干雞白湯",
+        "rating": 2,
+        "comment": "沒過煮干不要輕易嘗試 濃厚但不會太腥 配料吃完沒太大印象",
+        "style": "煮干",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "fj59qom",
+    "shop": "數寄屋辻葉",
+    "style": "泡系",
+    "station": "台電大樓",
+    "visits": [
+      {
+        "id": "ttkwc1s",
+        "item": "雅白辻葉雞白湯拉麵",
+        "rating": 3,
+        "comment": "濃湯但不會有負擔  泡系不明顯但還是很有層次 有柚子胡椒和一小片金結帶出一點柑橘香 雞豬鴨叉燒都好吃",
+        "style": "泡系",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "mbpsfl9",
+    "shop": "双豚",
+    "style": "",
+    "station": "新埔民生",
+    "visits": [
+      {
+        "id": "wl7dkw1",
+        "item": "DX濃湯拉麵",
+        "rating": 2,
+        "comment": "麵條Q 厚薄叉燒都好吃 其他一般",
+        "style": "",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "q1zad79",
+    "shop": "湮鯱",
+    "style": "海鮮",
+    "station": "忠孝復興",
+    "visits": [
+      {
+        "id": "dejb60e",
+        "item": "黑雕濃白湯拉麵",
+        "rating": 3,
+        "comment": "湯頭濃醇有奶香 海鮮味不會過於衝擊 雞豬叉燒Q嫩 加點的干貝也很Q",
+        "style": "海鮮",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "64xoae8",
+    "shop": "五之神製作所",
+    "style": "海鮮",
+    "station": "市政府",
+    "visits": [
+      {
+        "id": "5e9f3vy",
+        "item": "黃金蜆拉麵(限定)",
+        "rating": 2,
+        "comment": "叉燒薄嫩 菇菇好吃 湯頭帶有一點海鮮甜",
+        "style": "海鮮",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "y9ofivs",
+    "shop": "丸舢",
+    "style": "",
+    "station": "忠孝新生",
+    "visits": [
+      {
+        "id": "rhotth8",
+        "item": "特製雞貝鹽拉麵",
+        "rating": 2,
+        "comment": "有干貝跟魚卵 粗麵有嚼勁 還有烤雞腿排! 鹽味湯頭舒爽但記憶點不高",
+        "style": "",
+        "season": "鹽味"
+      }
+    ]
+  },
+  {
+    "id": "6hfmv7s",
+    "shop": "麵屋辰吉",
+    "style": "",
+    "station": "士林",
+    "visits": [
+      {
+        "id": "vwj6t2g",
+        "item": "松露鴨白湯",
+        "rating": 2,
+        "comment": "松露給得很有誠意 吃到後面都還很香  麵量少 塘心蛋普",
+        "style": "",
+        "season": "鴨白湯"
+      }
+    ]
+  },
+  {
+    "id": "xwpawfk",
+    "shop": "麒麟製作麵坊",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "1puaqvc",
+        "item": "頂級白松露雞魚貝拉麵",
+        "rating": 2,
+        "comment": "松露跟雞湯融合得很好 但不是極度濃郁那種 豬叉燒薄嫩好吃 干貝鮮甜",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "kk37avn",
+    "shop": "諭吉",
+    "style": "泡系",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "2u19qa5",
+        "item": "泡系辛味豚骨",
+        "rating": 2,
+        "comment": "泡系不明顯 湯汁沒什麼依附到麵體 豚骨中規中矩 有生薑配置但我不喜歡 大辣蛋我無感?",
+        "style": "泡系",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "07c564g",
+    "shop": "麵屋鴒",
+    "style": "泡系",
+    "station": "板橋",
+    "visits": [
+      {
+        "id": "o0jj5t7",
+        "item": "泡系清酒雞白湯",
+        "rating": 2,
+        "comment": "清酒香的清湯 但喝到後面偏單一 叉燒跟雞肉都很好吃 塘心蛋也不錯 但我很想加多一點清酒?",
+        "style": "泡系",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "ofp9wp2",
+    "shop": "丸宗",
+    "style": "橫濱家系",
+    "station": "三重",
+    "visits": [
+      {
+        "id": "ozcxu84",
+        "item": "家系豚骨醬油",
+        "rating": 3,
+        "comment": "選正常就很濃了 叉燒超級薄透滑順入口 湯頭不錯很舒爽",
+        "style": "橫濱家系",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "uicp3v0",
+    "shop": "誠屋",
+    "style": "",
+    "station": "雙連",
+    "visits": [
+      {
+        "id": "e6u4lk7",
+        "item": "赤辛牛骨白湯",
+        "rating": 3,
+        "comment": "細麵偏硬很可以 玉子有塘心蛋流 湯頭辣度有層次感",
+        "style": "",
+        "season": "味増"
+      }
+    ]
+  },
+  {
+    "id": "pj93ima",
+    "shop": "麵屋武藏",
+    "style": "",
+    "station": "台北車站",
+    "visits": [
+      {
+        "id": "gjxafr5",
+        "item": "味玉叉燒版",
+        "rating": 2,
+        "comment": "印象就是中規中矩",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "9f0tcdo",
+    "shop": "富山天滿",
+    "style": "",
+    "station": "大橋頭",
+    "visits": [
+      {
+        "id": "3wmlqc3",
+        "item": "堅果叉燒拉麵",
+        "rating": 2,
+        "comment": "堅果感不太明顯 但配置都滿好吃 湯頭是喝得出來有層次 火龍果塘心蛋很酷",
+        "style": "",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "wkwaqyw",
+    "shop": "天鷄麵屋坊",
+    "style": "泡系",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "tbq2aey",
+        "item": "柚香慕斯雞白湯",
+        "rating": 4,
+        "comment": "有綿密泡沫 柚香香味偏少但湯頭依舊濃醇香 魚卵給很多  肉片都很好吃",
+        "style": "泡系",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "n2iq98k",
+    "shop": "塩琉（林森店）",
+    "style": "海鮮",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "1w0h9g8",
+        "item": "濃厚海膽干貝",
+        "rating": 4,
+        "comment": "超濃奶香湯頭 叉燒很有嚼勁 麵體兩種都好吃 干貝大顆又彈牙有海膽就是讚 每時段縣定10碗 吃完就是爽",
+        "style": "海鮮",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "trz1osu",
+    "shop": "豚小屋",
+    "style": "",
+    "station": "輔大",
+    "visits": [
+      {
+        "id": "ozh5t5s",
+        "item": "醬油豚骨拉麵",
+        "rating": 3,
+        "comment": "豚骨濃但不油膩 捲麵Q彈牙有咬勁 叉燒薄透好入口 塘心蛋偏小顆",
+        "style": "",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "35ve974",
+    "shop": "吉天元",
+    "style": "",
+    "station": "西門",
+    "visits": [
+      {
+        "id": "rg0oqp0",
+        "item": "辛雞白湯",
+        "rating": 3,
+        "comment": "湯頭濃郁 但辛味我覺得無感哈哈哈 系麵體吸附湯汁吃起來愉快 配菜是水蓮讚讚 中規中矩不用排隊的雞白湯拉麵",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "ypm6f7u",
+    "shop": "銀座篝",
+    "style": "",
+    "station": "中山國小",
+    "visits": [
+      {
+        "id": "zmhyp2l",
+        "item": "松露雞白湯",
+        "rating": 2,
+        "comment": "松露一開始滿香 後面覺得變單調 舒肥雞偏普通 CP值不高",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "eu5t6ik",
+    "shop": "麵屋有漁",
+    "style": "海鮮",
+    "station": "西門",
+    "visits": [
+      {
+        "id": "ekx6z7h",
+        "item": "石斑魚白湯",
+        "rating": 3,
+        "comment": "少見的魚湯底淡麗型 有魚酥魚板 魚肉很Q 麵條偏硬但好像不太吸附湯汁 塘心蛋是鬆軟型",
+        "style": "海鮮",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "6dg9c3h",
+    "shop": "麵屋倫太郎",
+    "style": "",
+    "station": "新莊",
+    "visits": [
+      {
+        "id": "yv30mpj",
+        "item": "味增雞白清湯加辣",
+        "rating": 2,
+        "comment": "味增中規中矩 麻辣感我覺得不夠辣? 豬叉燒薄嫩不錯吃 舒肥雞偏普 塘心蛋太乾",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "v5o3qya",
+    "shop": "龍麟",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "696d51l",
+        "item": "雲丹雞白湯",
+        "rating": 1,
+        "comment": "雲丹=海膽 雞肉滿好吃 干貝很大但沒有鮮甜味 魚卵到是給很多 湯很平淡 沒有記憶點 麵量不多 CP值低",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "zr2ux9l",
+    "shop": "東京油組",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "y660z12",
+        "item": "辣味增油麵",
+        "rating": 3,
+        "comment": "排隊等滿久的 熱湯免費供應 大中小碗價錢一樣 配置要加組合比較滿足 淋上油後真的很香 油麵很Q彈 但價格偏高",
+        "style": "",
+        "season": "味增"
+      }
+    ]
+  },
+  {
+    "id": "vjh280o",
+    "shop": "茶悟拉麵",
+    "style": "泡系",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "aagn648",
+        "item": "春雪伯爵泡系雞白湯",
+        "rating": 1,
+        "comment": "茶香幾乎無 湯頭偏清淡沒有層次 叉燒偏硬又柴 有雲吞但沒有加到分 大概只有唐陽雞過關",
+        "style": "泡系",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "i6l2x5i",
+    "shop": "chill ramen",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "3dyf06q",
+        "item": "咖哩拉麵(限定)",
+        "rating": 2,
+        "comment": "免排隊常常有限定的拉麵店 麵體比較像一般的湯麵 配置中規中矩",
+        "style": "",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "u471d5o",
+    "shop": "恉霜拉麵",
+    "style": "",
+    "station": "松江南京",
+    "visits": [
+      {
+        "id": "ijabt9l",
+        "item": "老火牛白湯特盛",
+        "rating": 3,
+        "comment": "粗麵Q滑硬度剛好 免費加麵1次 有娃娃菜 換成豬叉燒一樣薄嫩好吃 舒肥雞帶皮也好嫩 番茄辣醬提味 湯頭濃郁不嫌膩",
+        "style": "",
+        "season": "牛骨白湯"
+      }
+    ]
+  },
+  {
+    "id": "su96fso",
+    "shop": "荷麵亭",
+    "style": "",
+    "station": "士林",
+    "visits": [
+      {
+        "id": "xlrs3qh",
+        "item": "辛豚骨白湯",
+        "rating": 2,
+        "comment": "隱藏感辛辣 麵條是軟Q型 蒜味偏重鹹 免費加麵2次 叉燒偏厚 炸牡蠣好吃 中規中矩豚骨白湯",
+        "style": "",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "w8e10vk",
+    "shop": "炊煙拉麵",
+    "style": "",
+    "station": "三重國小",
+    "visits": [
+      {
+        "id": "3czlw6g",
+        "item": "鹽味蛤蜊雞白",
+        "rating": 2,
+        "comment": "細麵有吸附湯汁 湯頭不到驚艷 但價錢CP值算可以 加柚子胡椒有比較香 塘心蛋有酒香但很小顆",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "2s1uh0x",
+    "shop": "麵屋鶴立",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "u7sqhru",
+        "item": "鶴立雞白湯",
+        "rating": 2,
+        "comment": "雞白湯普普 牛蒡不錯吃 舒肥雞.鴨胸肉.豬五花都很好吃 不想排隊可以來",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "w30e6gt",
+    "shop": "麵屋雞金",
+    "style": "",
+    "station": "忠孝新生",
+    "visits": [
+      {
+        "id": "mrh7j6t",
+        "item": "塘心蛋雞白湯",
+        "rating": 2,
+        "comment": "湯偏濃但沒有香味 吃完覺得沒啥特色 肉可以免費加量 叉燒算不錯 舒肥雞普通",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "ojiw5bu",
+    "shop": "麵魚.滿雞軒",
+    "style": "海鮮",
+    "station": "雙連",
+    "visits": [
+      {
+        "id": "2ye66jq",
+        "item": "特製真鯛拉麵",
+        "rating": 3,
+        "comment": "這次吃麵魚那間 麵體選偏硬還是覺得偏軟 濃湯不鹹膩 魚雞湯口感不回腥 叉燒很薄很嫩 塘心蛋是半熟我喜歡的",
+        "style": "海鮮",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "2ue4m61",
+    "shop": "勝王",
+    "style": "",
+    "station": "雙連",
+    "visits": [
+      {
+        "id": "00hi99l",
+        "item": "油封蟹肉松露雞白湯",
+        "rating": 3,
+        "comment": "湯頭很香 松露味層次",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "pklrlv9",
+    "shop": "麵屋千雲",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "1juxobf",
+        "item": "招牌柚香鹽味雞湯拉麵",
+        "rating": 3,
+        "comment": "有柚香感 加了柚子胡椒更香 麵條夠硬Q 配置肉片也不錯吃",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "s7s9p1e",
+    "shop": "長生塩人",
+    "style": "",
+    "station": "劍潭",
+    "visits": [
+      {
+        "id": "1jm58gk",
+        "item": "鹽味拉麵",
+        "rating": 1,
+        "comment": "超級普通 很像高麗菜湯麵",
+        "style": "",
+        "season": "鹽味"
+      },
+      {
+        "id": "juf2cim",
+        "item": "中華辣奶油拉麵",
+        "rating": 3,
+        "comment": "辣奶油配香菜好吃",
+        "style": "",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "3nas9e1",
+    "shop": "道樂拉麵",
+    "style": "",
+    "station": "劍潭",
+    "visits": [
+      {
+        "id": "870oxrn",
+        "item": "蛤蜊雞白湯拉麵",
+        "rating": 3,
+        "comment": "蛤蜊很有誠意 雞白湯有鮮味 濃厚好喝不膩口",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "jdu9wou",
+    "shop": "豚人",
+    "style": "",
+    "station": "忠孝復興",
+    "visits": [
+      {
+        "id": "tyj6pqj",
+        "item": "辛味豚骨",
+        "rating": 2,
+        "comment": "辣豆芽菜免費拿 豚骨很濃但不會膩 肥叉燒好吃 我想要更辣….",
+        "style": "",
+        "season": "豚骨"
+      }
+    ]
+  },
+  {
+    "id": "2dpm06l",
+    "shop": "隱家拉麵",
+    "style": "沾麵",
+    "station": "士林",
+    "visits": [
+      {
+        "id": "20k04cz",
+        "item": "濃厚海老沾麵",
+        "rating": 2,
+        "comment": "濃厚蝦味 配置肉片都不錯",
+        "style": "沾麵",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "dclir3l",
+    "shop": "讓麵煮一會",
+    "style": "",
+    "station": "新莊",
+    "visits": [
+      {
+        "id": "fwp8f4v",
+        "item": "泡系松露雞白湯",
+        "rating": 3,
+        "comment": "不是超綿密的泡沫 松露道中後段比較沒味道  但整體雞白湯還是濃厚香甜 塘心蛋是我愛的半熟流汁",
+        "style": "",
+        "season": "雞白湯"
+      },
+      {
+        "id": "6e54lvt",
+        "item": "川 辛雞白湯拉麵",
+        "rating": 3,
+        "comment": "辣度不能調整 有淡淡花椒香 雞白湯一樣好喝",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "ekhxr7v",
+    "shop": "柑橘Shinn -魚水",
+    "style": "海鮮",
+    "station": "信義安和",
+    "visits": [
+      {
+        "id": "51nxent",
+        "item": "柑橘鮮魚淡麗",
+        "rating": 3,
+        "comment": "有柑橘果香 還有比目魚就是讚",
+        "style": "海鮮",
+        "season": ""
+      },
+      {
+        "id": "zz9eo07",
+        "item": "柑橘鮮魚白湯",
+        "rating": 3,
+        "comment": "有比目魚還是讚 比較喜歡淡麗的",
+        "style": "海鮮",
+        "season": ""
+      }
+    ]
+  },
+  {
+    "id": "bjzz1yv",
+    "shop": "熊越岳",
+    "style": "",
+    "station": "新埔民生",
+    "visits": [
+      {
+        "id": "b7yn926",
+        "item": "柚香鹽味雞白湯(限定)",
+        "rating": 2,
+        "comment": "很排隊 免費加湯加麵 少見的獅子頭 其他偏普通",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "u4y67mg",
+    "shop": "富察家",
+    "style": "",
+    "station": "永春",
+    "visits": [
+      {
+        "id": "1dlapdx",
+        "item": "濃雞湯拉麵",
+        "rating": 2,
+        "comment": "湯頭濃郁但不鹹膩 中規中矩",
+        "style": "",
+        "season": "雞清湯"
+      }
+    ]
+  },
+  {
+    "id": "p2gb6ek",
+    "shop": "雞湯桑",
+    "style": "",
+    "station": "中山",
+    "visits": [
+      {
+        "id": "aj868rs",
+        "item": "松露雞白湯",
+        "rating": 1,
+        "comment": "湯不夠熱 麵體不夠Q彈 不愛地瓜配拉麵 整體吃完沒有記憶點 松露有 但沒有濃醇香 到是蜂蜜塘心蛋真 的很香",
+        "style": "",
+        "season": "雞白湯"
+      }
+    ]
+  },
+  {
+    "id": "mlesjhp",
+    "shop": "麵屋德家",
+    "style": "煮干",
+    "station": "民權溪",
+    "visits": [
+      {
+        "id": "u2p2udq",
+        "item": "濃厚煮干拉麵",
+        "rating": 2,
+        "comment": "煮干系入門 只記得叉燒好吃 肉桂唐陽雞很香",
+        "style": "煮干",
+        "season": ""
+      }
+    ]
+  }
+]
