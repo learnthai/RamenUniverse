@@ -137,68 +137,74 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     };
 
     const onTouchEnd = (e: TouchEvent) => {
-      // Link protection
-      if (linkTouch.current?.moved) {
-        // We can't easily prevent the click if it was already triggered or going to be
-        // but adding this to the link handler is better.
-      }
       linkTouch.current = null;
-
       if (!dragInfo.current) return;
 
       if (dragInfo.current.moved) {
         const draggingEl = container.querySelector(`[data-id="${dragInfo.current.cardId}"]`) as HTMLElement;
-        const cards = Array.from(container.querySelectorAll('.wish-card')) as HTMLElement[];
-        
-        // Final position calculation
-        let targetIdx = dragInfo.current.startIndex;
+        if (!draggingEl) return;
+
         const dragRect = draggingEl.getBoundingClientRect();
         const dragCenter = dragRect.top + dragRect.height / 2;
+        const sourceId = dragInfo.current.cardId;
 
-        const otherCards = cards.filter(c => c.getAttribute('data-id') !== dragInfo.current?.cardId);
-        
-        // Simplified target index estimation: 
-        // Iterate through all other cards and see how many we jumped over
-        let jumpedCount = 0;
-        otherCards.forEach((c) => {
-          const rect = c.getBoundingClientRect();
-          const center = rect.top + rect.height / 2;
-          if (dragInfo.current!.currentDelta > 0) {
-             if (center > dragInfo.current!.startY && center < dragCenter) jumpedCount++;
-          } else {
-             if (center < dragInfo.current!.startY && center > dragCenter) jumpedCount--;
+        // Find which card ID we ended up over in the current DOM
+        let targetId: string | null = null;
+        let minDiff = Infinity;
+
+        items.forEach((item) => {
+          if (item.id === sourceId) return;
+          const el = container.querySelector(`[data-id="${item.id}"]`) as HTMLElement;
+          if (!el) return;
+
+          const rect = el.getBoundingClientRect();
+          let center = rect.top + rect.height / 2;
+          
+          // Compensate for temporary CSS shifts during drag to get the "true" base position
+          if (el.classList.contains('drag-over-up')) center += 8;
+          if (el.classList.contains('drag-over-down')) center -= 8;
+
+          const diff = Math.abs(center - dragCenter);
+          if (diff < minDiff) {
+            minDiff = diff;
+            targetId = item.id;
           }
         });
-        targetIdx += jumpedCount;
 
-        // Perform move
-        const sItem = items[dragInfo.current.startIndex];
-        const tItem = items[targetIdx];
-
-        if (sItem && tItem && sItem.id !== tItem.id) {
+        if (sourceId && targetId && sourceId !== targetId) {
           save((prev) => {
             const newList = [...prev.wish];
-            const sIdx = newList.findIndex(x => x.id === sItem.id);
-            const tIdx = newList.findIndex(x => x.id === tItem.id);
+            const sIdx = newList.findIndex(x => x.id === sourceId);
+            const tIdx = newList.findIndex(x => x.id === targetId);
+
             if (sIdx !== -1 && tIdx !== -1) {
               const [moved] = newList.splice(sIdx, 1);
-              newList.splice(tIdx, 0, moved);
+              // Re-find target index after potential index shift
+              const finalTIdx = newList.findIndex(x => x.id === targetId);
+              if (sIdx < tIdx) {
+                // Moving down, insert after destination
+                newList.splice(finalTIdx + 1, 0, moved);
+              } else {
+                // Moving up, insert before destination
+                newList.splice(finalTIdx, 0, moved);
+              }
             }
             return { ...prev, wish: newList };
           });
         }
       }
 
-      // Cleanup visuals
-      const allCards = container.querySelectorAll('.wish-card') as NodeListOf<HTMLElement>;
-      allCards.forEach(c => {
-        c.style.transform = '';
-        c.style.zIndex = '';
-        c.classList.remove('dragging', 'drag-over-up', 'drag-over-down');
-      });
-
-      setDraggingCardId(null);
-      dragInfo.current = null;
+      // Final visual cleanup coordinated after state update to minimize flicker
+      setTimeout(() => {
+        const allCards = container.querySelectorAll('.wish-card') as NodeListOf<HTMLElement>;
+        allCards.forEach(c => {
+          c.style.transform = '';
+          c.style.zIndex = '';
+          c.classList.remove('dragging', 'drag-over-up', 'drag-over-down');
+        });
+        setDraggingCardId(null);
+        dragInfo.current = null;
+      }, 0);
     };
 
     container.addEventListener('touchstart', onTouchStart, { passive: true });
