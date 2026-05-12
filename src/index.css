@@ -105,23 +105,27 @@ a{color:inherit;text-decoration:none}
   position: relative;
   will-change: transform;
 }
-.card.dragging { 
-  opacity: 0.65; 
-  box-shadow: 6px 8px 0 rgba(255,255,255,.8), 6px 8px 0 1px #2A2218; 
-  z-index: 50; 
-  position: relative; 
+.wish-card.dragging {
+  opacity: 0.5;
+  pointer-events: none;
 }
-.card.drag-over-up { transform: translateY(-8px); transition: transform 0.2s; }
-.card.drag-over-down { transform: translateY(8px); transition: transform 0.2s; }
+.wish-card.drag-over {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px var(--blue);
+}
 
 .drag-handle { 
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex; 
   align-items: center; 
   justify-content: center;
   width: 28px; 
   flex-shrink: 0; 
   cursor: grab;
-  color: rgba(42,34,24,0.25); 
+  color: var(--ink-soft); 
   padding: 0 4px;
   touch-action: none;
   z-index: 10;
