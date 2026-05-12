@@ -16,8 +16,8 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
 
-  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const items = useMemo(() => {
     let res = wish;
@@ -38,46 +38,45 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     return res;
   }, [wish, q, filterType, filterValue]);
 
-  const handleDragStart = (e: React.DragEvent | React.TouchEvent, idx: number) => {
-    setDraggingIdx(idx);
+  const handleDragStart = (e: React.DragEvent | React.TouchEvent, id: string) => {
+    setDraggingId(id);
     if ('dataTransfer' in e) {
        e.dataTransfer.effectAllowed = 'move';
     }
   };
 
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
+  const handleDragOver = (e: React.DragEvent, id: string) => {
     e.preventDefault();
-    if (draggingIdx === null) return;
-    if (idx !== dragOverIdx) setDragOverIdx(idx);
+    if (draggingId === null) return;
+    if (id !== dragOverId) setDragOverId(id);
   };
 
   const handleDragEnd = () => {
-    if (draggingIdx !== null && dragOverIdx !== null && draggingIdx !== dragOverIdx) {
-      const sourceItem = items[draggingIdx];
-      const targetItem = items[dragOverIdx];
-      
-      const newList = [...state.wish];
-      const sIdx = newList.findIndex(x => x.id === sourceItem.id);
-      const tIdx = newList.findIndex(x => x.id === targetItem.id);
-      
-      if (sIdx !== -1 && tIdx !== -1) {
-        const [moved] = newList.splice(sIdx, 1);
-        newList.splice(tIdx, 0, moved);
-        save({ ...state, wish: newList });
-      }
+    if (draggingId !== null && dragOverId !== null && draggingId !== dragOverId) {
+      save((prev) => {
+        const newList = [...prev.wish];
+        const sIdx = newList.findIndex(x => x.id === draggingId);
+        const tIdx = newList.findIndex(x => x.id === dragOverId);
+        
+        if (sIdx !== -1 && tIdx !== -1) {
+          const [moved] = newList.splice(sIdx, 1);
+          newList.splice(tIdx, 0, moved);
+        }
+        return { ...prev, wish: newList };
+      });
     }
-    setDraggingIdx(null);
-    setDragOverIdx(null);
+    setDraggingId(null);
+    setDragOverId(null);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (draggingIdx === null) return;
+    if (draggingId === null) return;
     const touch = e.touches[0];
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const card = el?.closest('.wish-card');
     if (card) {
-      const idx = Number(card.getAttribute('data-idx'));
-      if (!isNaN(idx) && idx !== dragOverIdx) setDragOverIdx(idx);
+      const id = card.getAttribute('data-id');
+      if (id && id !== dragOverId) setDragOverId(id);
     }
   };
 
@@ -195,15 +194,19 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
           </div>
           <div className="grid-area">
             {items.map((c, idx) => {
-              const isDragging = draggingIdx === idx;
-              const isOver = dragOverIdx === idx;
-              let transform = 'none';
+              const isDragging = draggingId === c.id;
+              const isOver = dragOverId === c.id;
               
-              if (draggingIdx !== null && dragOverIdx !== null && !isDragging) {
-                if (draggingIdx < dragOverIdx) {
-                   if (idx > draggingIdx && idx <= dragOverIdx) transform = 'translateY(-100%) translateY(-11px)';
-                } else if (draggingIdx > dragOverIdx) {
-                   if (idx < draggingIdx && idx >= dragOverIdx) transform = 'translateY(100%) translateY(11px)';
+              // Find indices in the current display list for visual transform
+              const dIdx = draggingId ? items.findIndex(x => x.id === draggingId) : -1;
+              const oIdx = dragOverId ? items.findIndex(x => x.id === dragOverId) : -1;
+              
+              let transform = 'none';
+              if (dIdx !== -1 && oIdx !== -1 && !isDragging) {
+                if (dIdx < oIdx) {
+                   if (idx > dIdx && idx <= oIdx) transform = 'translateY(-100%) translateY(-11px)';
+                } else if (dIdx > oIdx) {
+                   if (idx < dIdx && idx >= oIdx) transform = 'translateY(100%) translateY(11px)';
                 }
               }
 
@@ -212,6 +215,7 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
                   key={c.id} 
                   className={`card wish-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''}`}
                   data-idx={idx}
+                  data-id={c.id}
                   draggable
                   style={{ 
                     touchAction: 'none',
@@ -219,10 +223,10 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
                     zIndex: isDragging ? 100 : 1,
                     transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)'
                   }}
-                  onDragStart={(e) => handleDragStart(e, idx)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragStart={(e) => handleDragStart(e, c.id)}
+                  onDragOver={(e) => handleDragOver(e, c.id)}
                   onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleDragStart(e, idx)}
+                  onTouchStart={(e) => handleDragStart(e, c.id)}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleDragEnd}
                 >
