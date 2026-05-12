@@ -19,6 +19,7 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
   const [dragState, setDragState] = useState<{ from: string | null; over: string | null }>({ from: null, over: null });
   const draggingId = useRef<string | null>(null);
   const dragOverId = useRef<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const items = useMemo(() => {
     let res = wish;
@@ -39,46 +40,101 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
     return res;
   }, [wish, q, filterType, filterValue]);
 
-  function startDrag(e: React.PointerEvent, id: string) {
-    e.preventDefault();
-    draggingId.current = id;
-    setDragState({ from: id, over: null });
+  React.useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
 
-    function onMove(ev: PointerEvent) {
-      const els = document.elementsFromPoint(ev.clientX, ev.clientY);
-      const cardEl = els.find(el => el.classList.contains('wish-card') && el.getAttribute('data-id') !== id);
-      const overId = cardEl?.getAttribute('data-id') ?? null;
-      if (overId !== dragOverId.current) {
-        dragOverId.current = overId;
-        setDragState({ from: id, over: overId });
+    function onPointerDown(e: PointerEvent) {
+      const target = e.target as HTMLElement;
+      const handle = target.closest('.drag-handle');
+      if (!handle) return;
+
+      const card = handle.closest('.wish-card') as HTMLElement | null;
+      if (!card) return;
+
+      const id = card.getAttribute('data-id');
+      if (!id) return;
+
+      // Crucial: Prevent default to stop scrolling
+      e.preventDefault();
+
+      draggingId.current = id;
+      setDragState({ from: id, over: null });
+
+      // Visual feedback: pin the dragged card to the pointer
+      const rect = card.getBoundingClientRect();
+      const startY = e.clientY;
+      const startTop = rect.top;
+
+      card.style.position = 'fixed';
+      card.style.top = rect.top + 'px';
+      card.style.left = rect.left + 'px';
+      card.style.width = rect.width + 'px';
+      card.style.zIndex = '999';
+      card.style.opacity = '0.75';
+      card.style.pointerEvents = 'none';
+      card.style.transition = 'none';
+
+      function onMove(ev: PointerEvent) {
+        ev.preventDefault();
+        const dy = ev.clientY - startY;
+        if (card) card.style.top = (startTop + dy) + 'px';
+
+        const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+        const targetCard = els.find(
+          el => el.classList.contains('wish-card') && el.getAttribute('data-id') !== id
+        );
+        const overId = targetCard?.getAttribute('data-id') ?? null;
+        if (overId !== dragOverId.current) {
+          dragOverId.current = overId;
+          setDragState({ from: id, over: overId });
+        }
       }
+
+      function onUp() {
+        if (card) {
+          card.style.position = '';
+          card.style.top = '';
+          card.style.left = '';
+          card.style.width = '';
+          card.style.zIndex = '';
+          card.style.opacity = '';
+          card.style.pointerEvents = '';
+          card.style.transition = '';
+        }
+
+        const from = draggingId.current;
+        const over = dragOverId.current;
+        if (from && over && from !== over) {
+          save((prev) => {
+            const newList = [...prev.wish];
+            const sIdx = newList.findIndex(x => x.id === from);
+            const tIdx = newList.findIndex(x => x.id === over);
+            if (sIdx !== -1 && tIdx !== -1) {
+              const [moved] = newList.splice(sIdx, 1);
+              newList.splice(tIdx, 0, moved);
+            }
+            return { ...prev, wish: newList };
+          });
+        }
+
+        draggingId.current = null;
+        dragOverId.current = null;
+        setDragState({ from: null, over: null });
+
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+      }
+
+      document.addEventListener('pointermove', onMove, { passive: false });
+      document.addEventListener('pointerup', onUp);
     }
 
-    function onUp() {
-      const from = draggingId.current;
-      const over = dragOverId.current;
-      if (from && over && from !== over) {
-        save((prev) => {
-          const newList = [...prev.wish];
-          const sIdx = newList.findIndex(x => x.id === from);
-          const tIdx = newList.findIndex(x => x.id === over);
-          if (sIdx !== -1 && tIdx !== -1) {
-            const [moved] = newList.splice(sIdx, 1);
-            newList.splice(tIdx, 0, moved);
-          }
-          return { ...prev, wish: newList };
-        });
-      }
-      draggingId.current = null;
-      dragOverId.current = null;
-      setDragState({ from: null, over: null });
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-    }
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-  }
+    container.addEventListener('pointerdown', onPointerDown, { passive: false });
+    return () => {
+      container.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [save]);
 
   const filterLabels: Record<string, string> = {
     station: '捷運站',
@@ -192,7 +248,7 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
             <span className="sec-line"></span>
             <span className="sec-cnt">{items.length} 家</span>
           </div>
-          <div className="grid-area">
+          <div className="grid-area" ref={listRef}>
             {items.map((c, idx) => {
               const isDragging = dragState.from === c.id;
               const isOver = dragState.over === c.id;
@@ -214,7 +270,6 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
                   <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
                     <div 
                       className="drag-handle"
-                      onPointerDown={(e) => startDrag(e, c.id)}
                       style={{ touchAction: 'none', cursor: 'grab', color: 'var(--red)' }}
                     >
                       <ICONS.Menu />
