@@ -66,6 +66,13 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
       const startY = e.clientY;
       const startTop = rect.top;
 
+      // Insert placeholder to keep layout stable
+      const placeholder = document.createElement('div');
+      placeholder.style.height = rect.height + 'px';
+      placeholder.style.marginBottom = '11px';
+      placeholder.id = 'drag-placeholder';
+      card.parentNode?.insertBefore(placeholder, card);
+
       card.style.position = 'fixed';
       card.style.top = rect.top + 'px';
       card.style.left = rect.left + 'px';
@@ -92,19 +99,29 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
       }
 
       function onUp() {
-        if (card) {
-          card.style.position = '';
-          card.style.top = '';
-          card.style.left = '';
-          card.style.width = '';
-          card.style.zIndex = '';
-          card.style.opacity = '';
-          card.style.pointerEvents = '';
-          card.style.transition = '';
-        }
-
         const from = draggingId.current;
         const over = dragOverId.current;
+
+        // Query live DOM for the card since it might have been re-rendered or we need a fresh ref
+        const liveCard = container?.querySelector(`.wish-card[data-id="${id}"]`) as HTMLElement | null;
+        if (liveCard) {
+          liveCard.style.position = '';
+          liveCard.style.top = '';
+          liveCard.style.left = '';
+          liveCard.style.width = '';
+          liveCard.style.zIndex = '';
+          liveCard.style.opacity = '';
+          liveCard.style.pointerEvents = '';
+          liveCard.style.transition = '';
+        }
+        
+        // Remove placeholder
+        document.getElementById('drag-placeholder')?.remove();
+
+        draggingId.current = null;
+        dragOverId.current = null;
+        setDragState({ from: null, over: null });
+
         if (from && over && from !== over) {
           save((prev) => {
             const newList = [...prev.wish];
@@ -117,10 +134,6 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
             return { ...prev, wish: newList };
           });
         }
-
-        draggingId.current = null;
-        dragOverId.current = null;
-        setDragState({ from: null, over: null });
 
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
