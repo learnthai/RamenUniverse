@@ -96,6 +96,7 @@ export default function App() {
           {curTab === 'wish' && (
             <WishPane 
               wish={state.wish} 
+              save={save}
               onEdit={(id) => openDrawer('wish', state.wish.find(x => x.id === id))} 
               onDel={(id) => setConfirmDialog({ msg: '確定刪除這家嗎？', action: 'del_wish', payload: id })} 
               onCheck={(id) => openDrawer('confirm', state.wish.find(x => x.id === id))} 

@@ -5,13 +5,13 @@ import { useStore } from './store';
 
 interface WishPaneProps {
   wish: RamenCard[];
+  save: (newState: any | ((prev: any) => any)) => void;
   onEdit: (id: string) => void;
   onDel: (id: string) => void;
   onCheck: (id: string) => void;
 }
 
-export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
-  const { state, save } = useStore();
+export function WishPane({ wish, save, onEdit, onDel, onCheck }: WishPaneProps) {
   const [q, setQ] = useState('');
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
@@ -123,14 +123,22 @@ export function WishPane({ wish, onEdit, onDel, onCheck }: WishPaneProps) {
         setDragState({ from: null, over: null });
 
         if (from && over && from !== over) {
-          save((prev) => {
+          save((prev: any) => {
             const newList = [...prev.wish];
-            const sIdx = newList.findIndex(x => x.id === from);
-            const tIdx = newList.findIndex(x => x.id === over);
-            if (sIdx !== -1 && tIdx !== -1) {
-              const [moved] = newList.splice(sIdx, 1);
+            const sIdx = newList.findIndex((x: any) => x.id === from);
+            if (sIdx === -1) return prev;
+            
+            const [moved] = newList.splice(sIdx, 1);
+            const tIdx = newList.findIndex((x: any) => x.id === over);
+            
+            if (tIdx !== -1) {
               newList.splice(tIdx, 0, moved);
+            } else {
+              // Fallback: if over item not found (unlikely), just put at end or keep original
+              newList.splice(sIdx, 0, moved);
+              return prev;
             }
+            
             return { ...prev, wish: newList };
           });
         }

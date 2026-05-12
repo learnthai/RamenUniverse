@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AppState, RamenCard } from './types';
 import explicitVisits from './new_visits.json';
 import { MRT } from './constants';
@@ -342,13 +342,13 @@ export const useStore = () => {
     setLoaded(true);
   }, []);
 
-  const save = (newState: AppState | ((prev: AppState) => AppState)) => {
+  const save = useCallback((newState: AppState | ((prev: AppState) => AppState)) => {
     setState((prev) => {
       const computed = typeof newState === 'function' ? newState(prev) : newState;
       localStorage.setItem(SK, JSON.stringify(computed));
       return computed;
     });
-  };
+  }, []);
 
   return { state, save, loaded };
 };
