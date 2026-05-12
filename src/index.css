@@ -100,18 +100,8 @@ a{color:inherit;text-decoration:none}
 .pane{display:none;flex-direction:column;flex:1}
 
 .wish-card {
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s;
   user-select: none;
   position: relative;
-  will-change: transform;
-}
-.wish-card.dragging {
-  opacity: 0.5;
-  pointer-events: none;
-}
-.wish-card.drag-over {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 2px var(--blue);
 }
 
 .drag-handle { 
