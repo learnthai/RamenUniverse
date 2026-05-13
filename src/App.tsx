@@ -10,16 +10,16 @@ import { ShareViewer } from './ShareViewer';
 import { Drawers } from './Drawers';
 
 export default function App() {
-  const { state, save, loaded } = useStore();
+  const { state, save, loaded, readOnly, user } = useStore();
   const [curTab, setCurTab] = useState<'wish'|'visited'|'map'|'export'>('wish');
 
-  // Handle Share URL Parameter
+  // Handle Share URL Parameter for compress mode
   const [shareData, setShareData] = useState<string | null>(null);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const share = params.get('share');
-    if (share) {
+    if (share && !params.has('shareId')) {
       setShareData(share);
     }
   }, []);
@@ -32,12 +32,13 @@ export default function App() {
   if (!loaded) return null;
 
   const openDrawer = (name: string, payload?: any) => {
+    if (readOnly) return; // Disallow opening edit drawers
     setDrawerPayload(payload);
     setDrawer(name);
   };
 
   const handleConfirm = () => {
-    if (!confirmDialog) return;
+    if (!confirmDialog || readOnly) return;
     
     // Store logic
     save((prev) => {
@@ -63,14 +64,25 @@ export default function App() {
     setConfirmDialog(null);
   };
 
+  const clearShareId = () => {
+    window.location.href = window.location.pathname;
+  };
+
   return (
     <>
       {shareData && <ShareViewer dataString={shareData} onClose={() => {
         setShareData(null);
         window.history.replaceState({}, '', window.location.pathname);
       }} />}
+      
+      {readOnly && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: 'var(--red)', color: '#fff', fontSize: 13, fontWeight: 800, padding: 8, textAlign: 'center', zIndex: 10000, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+          <span>🍜 正在觀看即時分享清單 (唯讀模式)</span>
+        </div>
+      )}
+
       <Deco />
-      <div id="app">
+      <div id="app" style={{ paddingTop: readOnly ? 36 : 0 }}>
         <header className="hd">
           <div className="hd-top">
             <div className="logo">
@@ -79,11 +91,13 @@ export default function App() {
               </span>
               <span className="logo-text">拉麵<em>です</em></span>
             </div>
-            <div className="hd-btns">
-              <button className="hbtn" title="管理選單" onClick={() => openDrawer('manage')}>
-                <ICONS.Sun />
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="hd-btns">
+                <button className="hbtn" title="管理選單" onClick={() => openDrawer('manage')}>
+                  <ICONS.Sun />
+                </button>
+              </div>
+            )}
           </div>
           <div className="tabs" style={{ paddingLeft: 23, paddingRight: 0, marginLeft: -3 }}>
             <button className={`tab ${curTab === 'wish' ? 'on' : ''}`} onClick={() => setCurTab('wish')} data-t="wish" style={{ paddingLeft: 15, marginLeft: 4, marginTop: 2, marginRight: 3 }}>想去 <span className="tab-n">{state.wish.length}</span></button>
@@ -97,23 +111,23 @@ export default function App() {
             <WishPane 
               wish={state.wish} 
               save={save}
-              onEdit={(id) => openDrawer('wish', state.wish.find(x => x.id === id))} 
-              onDel={(id) => setConfirmDialog({ msg: '確定刪除這家嗎？', action: 'del_wish', payload: id })} 
-              onCheck={(id) => openDrawer('confirm', state.wish.find(x => x.id === id))} 
+              onEdit={readOnly ? () => {} : (id) => openDrawer('wish', state.wish.find(x => x.id === id))} 
+              onDel={readOnly ? () => {} : (id) => setConfirmDialog({ msg: '確定刪除這家嗎？', action: 'del_wish', payload: id })} 
+              onCheck={readOnly ? () => {} : (id) => openDrawer('confirm', state.wish.find(x => x.id === id))} 
             />
           )}
 
           {curTab === 'visited' && (
             <VisitedPane 
               visited={state.visited} 
-              onAddVisit={(cardId) => openDrawer('addVisit', state.visited.find(x => x.id === cardId))}
-              onEditCard={(id) => openDrawer('editCard', state.visited.find(x => x.id === id))}
-              onDelCard={(id) => setConfirmDialog({ msg: '確定刪除這間店的所有記錄嗎？', action: 'del_visited_card', payload: id })}
-              onEditVisit={(cardId, idx) => {
+              onAddVisit={readOnly ? () => {} : (cardId) => openDrawer('addVisit', state.visited.find(x => x.id === cardId))}
+              onEditCard={readOnly ? () => {} : (id) => openDrawer('editCard', state.visited.find(x => x.id === id))}
+              onDelCard={readOnly ? () => {} : (id) => setConfirmDialog({ msg: '確定刪除這間店的所有記錄嗎？', action: 'del_visited_card', payload: id })}
+              onEditVisit={readOnly ? () => {} : (cardId, idx) => {
                 const c = state.visited.find(x => x.id === cardId);
                 if (c && c.visits) openDrawer('editVisit', { cardId, visitIdx: idx, ...c.visits[idx] });
               }}
-              onDelVisit={(cardId, idx) => setConfirmDialog({ msg: '確定刪除這筆記錄嗎？', action: 'del_visited_entry', payload: { cardId, idx } })}
+              onDelVisit={readOnly ? () => {} : (cardId, idx) => setConfirmDialog({ msg: '確定刪除這筆記錄嗎？', action: 'del_visited_entry', payload: { cardId, idx } })}
             />
           )}
 
@@ -128,7 +142,7 @@ export default function App() {
           )}
         </main>
         
-        {curTab !== 'map' && curTab !== 'export' && (
+        {!readOnly && curTab !== 'map' && curTab !== 'export' && (
            <button 
              className={`fab ${curTab === 'visited' ? 'c-visited' : 'c-wish'}`} 
              onClick={() => openDrawer(curTab === 'visited' ? 'visited' : 'wish')}
@@ -138,13 +152,15 @@ export default function App() {
         )}
       </div>
 
-      <Drawers 
-        drawer={drawer} 
-        payload={drawerPayload} 
-        onClose={() => setDrawer(null)} 
-        state={state}
-        save={save}
-      />
+      {!readOnly && (
+        <Drawers 
+          drawer={drawer} 
+          payload={drawerPayload} 
+          onClose={() => setDrawer(null)} 
+          state={state}
+          save={save}
+        />
+      )}
       
       {confirmDialog && (
         <div className="ov on" style={{zIndex: 1000}}>

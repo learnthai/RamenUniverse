@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, RamenCard } from './types';
 import explicitVisits from './new_visits.json';
 import { MRT } from './constants';
+import { auth, db } from './firebase';
+import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 const SK = 'ramen_desu_v4';
 
@@ -13,6 +16,8 @@ const defaultState: AppState = {
 };
 
 export function normalizeCard(c: RamenCard): RamenCard {
+// ... keep existing normalizations, just copying exact lines except the top stuff
+
   const STYLES = ['橫濱家系', '二郎', '泡系', '沾麵', '魚介', '淡麗', '海鮮', '煮干'];
   const SEASONS = ['豚骨', '鹽味', '味增', '醬油', '雞白湯', '牛骨白湯', '雞清湯', '鴨白湯'];
 
@@ -235,8 +240,33 @@ function parseMigrationData() {
 export const useStore = () => {
   const [state, setState] = useState<AppState>(defaultState);
   const [loaded, setLoaded] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isFirebaseSyncing, setIsFirebaseSyncing] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
+  const remoteUpdateRef = useRef(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('shareId');
+
+    if (shareId) {
+      setReadOnly(true);
+      const ref = doc(db, 'user_lists', shareId);
+      const unsub = onSnapshot(ref, (snap) => {
+        if (snap.exists()) {
+           const data = snap.data();
+           setState({
+             wish: data.wish || [],
+             visited: data.visited || [],
+             styles: data.styles || defaultState.styles,
+             seasons: data.seasons || defaultState.seasons
+           });
+        }
+        setLoaded(true);
+      });
+      return () => unsub();
+    }
+
     try {
       let currentState = defaultState;
       const d = localStorage.getItem(SK);
@@ -246,17 +276,17 @@ export const useStore = () => {
       
       const migrated = localStorage.getItem('migrated_v12_restore_full');
       if (!migrated) {
+        // ... (keep the same code block inside)
         const { wishes, visits } = parseMigrationData();
         
         const getScore = (item: any) => {
           let score = 0;
-          // Favor content heavily
           if (item.comment && item.comment.trim() !== '') score += 50;
           if (item.style && item.style !== '' && item.style !== '拉麵') score += 10;
           if (item.season && item.season !== '') score += 10;
           if (item.station && item.station !== '') score += 5;
           if (item.visits && item.visits.length > 0) {
-            score += 100; // Anything with visit history is high priority
+            score += 100;
             const last = item.visits[item.visits.length - 1];
             if (last.comment && last.comment.trim() !== '') score += 50;
             if (last.rating && last.rating > 0) score += (last.rating * 10);
@@ -268,17 +298,12 @@ export const useStore = () => {
 
         const mergeRecovery = (existing: any[], incoming: any[]) => {
           const map = new Map<string, any>();
-          
-          // Granular Key: shop name + style
           const getKey = (item: any) => `${item.shop.trim().toLowerCase()}|${(item.style || '').trim().toLowerCase()}`;
 
-          // 1. Process legacy data
           incoming.forEach(item => {
             map.set(getKey(item), item);
           });
           
-          // 2. Overwrite with existing user data if score is better OR equal
-          // (This keeps user edits while filling gaps from legacy)
           existing.forEach(item => {
             const key = getKey(item);
             const current = map.get(key);
@@ -311,7 +336,6 @@ export const useStore = () => {
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
 
-      // V14 Cleanup: Force normalize all existing data to fix mistakes like "雞白" in style
       const migrated14 = localStorage.getItem('migrated_v14_cleanup_v6');
       if (!migrated14) {
         const updateMapping: Record<string, string> = {
@@ -340,7 +364,6 @@ export const useStore = () => {
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
 
-      // V15 Content Update: User requested specific updates to Wish list (2024-05-12)
       const migrated15 = localStorage.getItem('migrated_v15_content_v3');
       if (!migrated15) {
         const toDelete = ['亨星', '麵魚'];
@@ -358,14 +381,11 @@ export const useStore = () => {
 
         let wish = [...currentState.wish];
         
-        // Delete items from wish list only
         wish = wish.filter(c => {
-          // If it matches a specifically updated item, keep it
           if (c.shop.includes('麺魚堺') || c.shop.includes('麵魚堺')) return true;
           return !toDelete.some(d => c.shop === d || c.shop === (d + '拉麵') || (c.shop.includes(d) && !c.shop.includes('堺') && !c.shop.includes('滿雞軒')));
         });
 
-        // Update existing wish items or add if missing
         updates.forEach(upd => {
           let found = wish.find(c => c.shop.includes(upd.match));
           if (found) {
@@ -394,13 +414,65 @@ export const useStore = () => {
       setState(currentState);
     } catch (e) {}
     setLoaded(true);
+
+    const unsubAuth = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+    return () => unsubAuth();
   }, []);
 
+  useEffect(() => {
+    if (!user || readOnly) return;
+    
+    // Sync to FireStore
+    const ref = doc(db, 'user_lists', user.uid);
+    setIsFirebaseSyncing(true);
+
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data && data.updatedAt && !remoteUpdateRef.current) {
+          const freshState: AppState = {
+            wish: data.wish || [],
+            visited: data.visited || [],
+            styles: data.styles || defaultState.styles,
+            seasons: data.seasons || defaultState.seasons
+          };
+          setState(freshState);
+          localStorage.setItem(SK, JSON.stringify(freshState));
+        }
+      } else {
+        // Init remote database with local
+        const local = localStorage.getItem(SK);
+        if (local) {
+          const st = JSON.parse(local);
+          remoteUpdateRef.current = true;
+          setDoc(doc(db, 'user_lists', user.uid), {
+            userId: user.uid,
+            wish: st.wish || [],
+            visited: st.visited || [],
+            styles: st.styles || defaultState.styles,
+            seasons: st.seasons || defaultState.seasons,
+            updatedAt: Date.now().toString()
+          }).then(() => {
+            remoteUpdateRef.current = false;
+          }).catch(err => {
+            remoteUpdateRef.current = false;
+            console.error('Failed init:', err);
+          });
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [user, readOnly]);
+
   const save = useCallback((newState: AppState | ((prev: AppState) => AppState)) => {
+    if (readOnly) return; // Prevent saving in read-only mode
+
     setState((prev) => {
       const computed = typeof newState === 'function' ? newState(prev) : newState;
       
-      // Auto-normalize on every save to keep map and lists in sync
       const finalState = {
         ...computed,
         wish: (computed.wish || []).map(normalizeCard),
@@ -408,9 +480,27 @@ export const useStore = () => {
       };
       
       localStorage.setItem(SK, JSON.stringify(finalState));
+      
+      if (auth.currentUser) {
+        remoteUpdateRef.current = true;
+        setDoc(doc(db, 'user_lists', auth.currentUser.uid), {
+          userId: auth.currentUser.uid,
+          wish: finalState.wish,
+          visited: finalState.visited,
+          styles: finalState.styles,
+          seasons: finalState.seasons,
+          updatedAt: Date.now().toString()
+        }).then(() => {
+          remoteUpdateRef.current = false;
+        }).catch(err => {
+          remoteUpdateRef.current = false;
+          console.error('Firebase save error:', err);
+        });
+      }
+      
       return finalState;
     });
-  }, []);
+  }, [readOnly]);
 
-  return { state, save, loaded };
+  return { state, save, loaded, user, isFirebaseSyncing, readOnly };
 };

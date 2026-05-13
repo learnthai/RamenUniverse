@@ -9,9 +9,10 @@ interface WishPaneProps {
   onEdit: (id: string) => void;
   onDel: (id: string) => void;
   onCheck: (id: string) => void;
+  readOnly?: boolean;
 }
 
-export function WishPane({ wish, save, onEdit, onDel, onCheck }: WishPaneProps) {
+export function WishPane({ wish, save, onEdit, onDel, onCheck, readOnly }: WishPaneProps) {
   const [q, setQ] = useState('');
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
@@ -288,15 +289,17 @@ export function WishPane({ wish, save, onEdit, onDel, onCheck }: WishPaneProps) 
                     position: 'relative',
                   }}
                 >
-                  <div className="cbody" style={{ position: 'relative', paddingLeft: 42 }}>
-                    <div 
-                      className="drag-handle"
-                      style={{ touchAction: 'none', cursor: 'grab', color: 'var(--red)' }}
-                    >
-                      <ICONS.Menu />
-                    </div>
+                  <div className="cbody" style={{ position: 'relative', paddingLeft: readOnly ? 16 : 42 }}>
+                    {!readOnly && (
+                      <div 
+                        className="drag-handle"
+                        style={{ touchAction: 'none', cursor: 'grab', color: 'var(--red)' }}
+                      >
+                        <ICONS.Menu />
+                      </div>
+                    )}
                     <div className="crow-top">
-                      <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>
+                      {!readOnly && <span className="ccheck" onClick={() => onCheck(c.id)}><ICONS.CircleEmpty /></span>}
                       <a 
                         className="cname" 
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} 
@@ -304,10 +307,12 @@ export function WishPane({ wish, save, onEdit, onDel, onCheck }: WishPaneProps) 
                         rel="noopener noreferrer"
                         onPointerDown={(e) => e.stopPropagation()}
                       >{c.shop}</a>
-                      <div className="cactions">
-                        <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEdit(c.id); }}><ICONS.Edit /></div>
-                        <div className="cact del" onClick={(e) => { e.stopPropagation(); onDel(c.id); }}><ICONS.Delete /></div>
-                      </div>
+                      {!readOnly && (
+                        <div className="cactions">
+                          <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEdit(c.id); }}><ICONS.Edit /></div>
+                          <div className="cact del" onClick={(e) => { e.stopPropagation(); onDel(c.id); }}><ICONS.Delete /></div>
+                        </div>
+                      )}
                     </div>
                     {c.item && <div className="citem"><span className="clabel wish">招牌</span><span style={{ color: '#261f15' }}>{c.item}</span></div>}
                     <div className="ctags">

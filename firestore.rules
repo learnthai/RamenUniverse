@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    function isValidUserList(data) {
+      return data.keys().hasAll(['userId']) &&
+             data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() <= 128 &&
+             (!('wish' in data) || data.wish is list) &&
+             (!('visited' in data) || data.visited is list) &&
+             (!('styles' in data) || data.styles is list) &&
+             (!('seasons' in data) || data.seasons is list) &&
+             (!('updatedAt' in data) || data.updatedAt is string || data.updatedAt is timestamp);
+    }
+
+    match /user_lists/{userId} {
+      allow get: if isValidId(userId); // Public read! Allows sharing.
+      allow list: if false; 
+      allow create: if isSignedIn() && isOwner(userId) && isValidId(userId) && isValidUserList(incoming());
+      allow update: if (
+        isSignedIn() && 
+        isOwner(userId) && 
+        isValidId(userId) && 
+        isValidUserList(incoming()) && 
+        incoming().userId == existing().userId &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['wish', 'visited', 'styles', 'seasons', 'updatedAt'])
+      );
+      allow delete: if isSignedIn() && isOwner(userId) && isValidId(userId);
+    }
+  }
+}

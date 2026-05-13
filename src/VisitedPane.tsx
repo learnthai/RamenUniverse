@@ -9,9 +9,10 @@ interface VisitedPaneProps {
   onDelCard: (cardId: string) => void;
   onEditVisit: (cardId: string, visitIdx: number) => void;
   onDelVisit: (cardId: string, visitIdx: number) => void;
+  readOnly?: boolean;
 }
 
-export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEditVisit, onDelVisit }: VisitedPaneProps) {
+export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEditVisit, onDelVisit, readOnly }: VisitedPaneProps) {
   const [q, setQ] = useState('');
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
@@ -187,10 +188,12 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
                     <div className="crow-top">
                       <span className="ccheck" style={{cursor: 'default'}}><ICONS.CircleFilled /></span>
                       <a className="cname" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.shop + ' 台北拉麵')}`} target="_blank" rel="noopener noreferrer">{c.shop}</a>
-                      <div className="cactions">
-                        <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEditCard(c.id); }}><ICONS.Edit /></div>
-                        <div className="cact del" onClick={(e) => { e.stopPropagation(); onDelCard(c.id); }}><ICONS.Delete /></div>
-                      </div>
+                      {!readOnly && (
+                        <div className="cactions">
+                          <div className="cact edit" onClick={(e) => { e.stopPropagation(); onEditCard(c.id); }}><ICONS.Edit /></div>
+                          <div className="cact del" onClick={(e) => { e.stopPropagation(); onDelCard(c.id); }}><ICONS.Delete /></div>
+                        </div>
+                      )}
                     </div>
                     <div className="ctags">
                       {c.station && (
@@ -213,18 +216,22 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
                             </div>
                           </div>
                           {v.comment && <div className="ve-comment">「{v.comment}」</div>}
-                          <div className="ve-actions">
-                            <div className="ve-act edit" onClick={(e) => { e.stopPropagation(); onEditVisit(c.id, idx); }}><ICONS.Edit /></div>
-                            <div className="ve-act del" onClick={(e) => { e.stopPropagation(); onDelVisit(c.id, idx); }}><ICONS.Delete /></div>
-                          </div>
+                          {!readOnly && (
+                            <div className="ve-actions">
+                              <div className="ve-act edit" onClick={(e) => { e.stopPropagation(); onEditVisit(c.id, idx); }}><ICONS.Edit /></div>
+                              <div className="ve-act del" onClick={(e) => { e.stopPropagation(); onDelVisit(c.id, idx); }}><ICONS.Delete /></div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
-                    <div className="cfoot">
-                      <button style={{fontFamily:'var(--jp)', fontSize:11, background:'var(--green-lt)', color:'var(--green)', border:'1px solid var(--green-mid)', borderRadius:'var(--pill)', padding:'4px 12px', cursor:'pointer'}} onClick={() => onAddVisit(c.id)}>
-                        ＋ 再訪記錄
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className="cfoot">
+                        <button style={{fontFamily:'var(--jp)', fontSize:11, background:'var(--green-lt)', color:'var(--green)', border:'1px solid var(--green-mid)', borderRadius:'var(--pill)', padding:'4px 12px', cursor:'pointer'}} onClick={() => onAddVisit(c.id)}>
+                          ＋ 再訪記錄
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

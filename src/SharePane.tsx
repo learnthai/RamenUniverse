@@ -4,9 +4,11 @@ import { ICONS, MRT } from './constants';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import LZString from 'lz-string';
+import { auth } from './firebase';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 export function SharePane() {
-  const { state } = useStore();
+  const { state, user, readOnly } = useStore();
   
   const [filterType, setFilterType] = useState<'wish' | 'visited'>('visited');
   const [filterStation, setFilterStation] = useState<string>('all');
@@ -141,9 +143,18 @@ export function SharePane() {
     }
   };
 
+  const shrinkUrl = async (url: string) => {
+    try {
+      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
+      const resJson = await res.json();
+      if (resJson.shorturl) {
+        return resJson.shorturl;
+      }
+    } catch (e) {}
+    return url;
+  };
+
   const handleExportLink = async () => {
-    // Generate a highly compact structure for sharing
-    // Uses indexing for styles and seasons to save space
     const stylesIndex = state.styles;
     const seasonsIndex = state.seasons;
 
@@ -165,12 +176,12 @@ export function SharePane() {
         if (comment && comment.length > 30) comment = comment.substring(0, 30) + '...';
 
         return [
-          d.shop,                     // 0: Name
-          d.station || "",            // 1: MRT
-          styleIdx > -1 ? styleIdx : (d.style || ""), // 2: Style (index or string)
-          seasonIdx > -1 ? seasonIdx : (d.season || ""), // 3: Season (index or string)
-          avgRating,                  // 4: Rating
-          comment || ""               // 5: Comment
+          d.shop,
+          d.station || "",
+          styleIdx > -1 ? styleIdx : (d.style || ""),
+          seasonIdx > -1 ? seasonIdx : (d.season || ""),
+          avgRating,
+          comment || ""
         ];
       })
     };
@@ -186,17 +197,31 @@ export function SharePane() {
         return;
       }
       
-      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
-      const resJson = await res.json();
-      if (resJson.shorturl) {
-        navigator.clipboard.writeText(resJson.shorturl);
-        showToast('已複製縮短後的頁面連結！');
-      } else {
-        navigator.clipboard.writeText(url);
-        showToast('短網址服務暫時失效，已複製完整連結！');
-      }
+      const shortUrl = await shrinkUrl(url);
+      navigator.clipboard.writeText(shortUrl);
+      showToast('已複製分享名片連結！');
     } catch (e) {
       showToast('產生連結失敗');
+    }
+  };
+
+  const handleExportLiveLink = async () => {
+    if (!user) {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+        // On success, we just let the effect sync it up
+        showToast('登入成功！此清單已備份至雲端。');
+      } catch (err) {
+        console.error(err);
+        showToast('登入失敗');
+        return;
+      }
+    } else {
+      const url = `${window.location.origin}${window.location.pathname}?shareId=${user.uid}`;
+      const shortUrl = await shrinkUrl(url);
+      navigator.clipboard.writeText(shortUrl);
+      showToast('已複製即時更新連結！');
     }
   };
 
@@ -297,7 +322,7 @@ export function SharePane() {
 
       <div className="grid-area" style={{ background: 'var(--bg-mid)', padding: 16, borderRadius: 16, border: '2px solid var(--bdr)', marginTop: -10 }}>
         <h3 style={{ margin: '0 0 16px 3px', padding: '0', fontSize: 18, fontWeight: 700, color: '#C8442A', lineHeight: '25px' }}>決定匯出格式</h3>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: !readOnly ? 12 : 0 }}>
           <button className="sbtn" style={{ flex: 1, minWidth: 80, padding: 12, background: 'var(--bg)', color: '#e4c111' }} onClick={handleExportJPG}>
             JPG 圖片
           </button>
@@ -308,6 +333,11 @@ export function SharePane() {
             頁面連結
           </button>
         </div>
+        {!readOnly && (
+          <button className="sbtn" style={{ width: '100%', padding: '12px 16px', background: '#d85840', color: '#fff', fontWeight: 800, transform: 'none', border: '2px solid #5a140b', boxShadow: '0 4px 10px rgba(200, 68, 42, 0.4)' }} onClick={handleExportLiveLink}>
+            {user ? '🔗 產生即時同步連結' : '🚀 登入以開啟即時同步分享'}
+          </button>
+        )}
       </div>
 
       {/* Invisible container for high-quality export */}

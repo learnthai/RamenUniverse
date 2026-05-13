@@ -1,0 +1,24 @@
+{
+  "entities": {
+    "UserList": {
+      "title": "User List",
+      "description": "User's ramen wish and visited list",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the owner" },
+        "wish": { "type": "array" },
+        "visited": { "type": "array" },
+        "styles": { "type": "array" },
+        "seasons": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId"]
+    }
+  },
+  "firestore": {
+    "/user_lists/{userId}": {
+      "schema": { "$ref": "#/entities/UserList" },
+      "description": "Stores user data"
+    }
+  }
+}
