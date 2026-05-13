@@ -39,9 +39,15 @@ export function ShareViewer({ dataString, onClose }: { dataString: string; onClo
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#fcfcfc', zIndex: 9999, overflowY: 'auto', padding: 24, paddingBottom: 64 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <button onClick={onClose} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 30, fontWeight: 'bold', cursor: 'pointer', fontSize: 16, boxShadow: 'var(--shadow-sm)' }}>
-          ← 回到我的清單
-        </button>
+        {data.u ? (
+          <a href={`/?shareId=${data.u}`} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 30, fontWeight: 'bold', cursor: 'pointer', fontSize: 16, boxShadow: 'var(--shadow-sm)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            ← 返回清單 (唯讀模式)
+          </a>
+        ) : (
+          <a href={window.location.href} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 30, fontWeight: 'bold', cursor: 'pointer', fontSize: 16, boxShadow: 'var(--shadow-sm)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            ← 返回清單 (唯讀模式)
+          </a>
+        )}
       </div>
 
       <h1 style={{ fontSize: 24, margin: '0 0 8px', borderBottom: '3px solid #1a1a1a', paddingBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>

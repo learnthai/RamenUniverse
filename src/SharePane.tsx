@@ -160,6 +160,7 @@ export function SharePane() {
 
     const compactData = {
       t: filterType,
+      u: user ? user.uid : undefined,
       s: stylesIndex,
       se: seasonsIndex,
       d: exportData.map(d => {
