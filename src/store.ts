@@ -411,6 +411,43 @@ export const useStore = () => {
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
 
+      const migrated16 = localStorage.getItem('migrated_v16_content_v4');
+      if (!migrated16) {
+        const update = {
+          match: '麵魚',
+          shop: '麵魚楐',
+          item: '玉味松露餛飩鹽味拉麵',
+          season: '鹽味',
+          station: '雙連',
+          comment: '鹽味濃但不會過鹹 松露餛飩超香 \n變態魔鬼辣椒粉認真辣我只加兩匙\n麵體是超細麵偏硬Q有嚼勁'
+        };
+
+        let wish = [...currentState.wish];
+        let found = wish.find(c => c.shop.includes('麵魚') || c.shop.includes('麺魚'));
+        
+        if (found) {
+          found.shop = update.shop;
+          found.item = update.item;
+          found.season = update.season;
+          found.station = update.station;
+          found.comment = update.comment;
+        } else {
+          wish.push({
+            id: Math.random().toString(36).substring(2, 9),
+            shop: update.shop,
+            item: update.item,
+            season: update.season,
+            station: update.station,
+            comment: update.comment,
+            style: ''
+          });
+        }
+
+        currentState.wish = wish.map(normalizeCard);
+        localStorage.setItem('migrated_v16_content_v4', '1');
+        localStorage.setItem(SK, JSON.stringify(currentState));
+      }
+
       setState(currentState);
     } catch (e) {}
     setLoaded(true);
