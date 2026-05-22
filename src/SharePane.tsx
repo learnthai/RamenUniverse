@@ -143,15 +143,35 @@ export function SharePane() {
     }
   };
 
-  const shrinkUrl = async (url: string) => {
-    try {
-      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
-      const resJson = await res.json();
-      if (resJson.shorturl) {
-        return resJson.shorturl;
+  const shrinkUrl = (url: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const callbackName = 'isgd_cb_' + Math.floor(Math.random() * 1000000);
+      const script = document.createElement('script');
+      
+      (window as any)[callbackName] = (data: any) => {
+        cleanup();
+        if (data && data.shorturl) {
+          resolve(data.shorturl);
+        } else {
+          resolve(url);
+        }
+      };
+
+      script.onerror = () => {
+        cleanup();
+        resolve(url);
+      };
+
+      function cleanup() {
+        delete (window as any)[callbackName];
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
       }
-    } catch (e) {}
-    return url;
+
+      script.src = `https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}&callback=${callbackName}`;
+      document.body.appendChild(script);
+    });
   };
 
   const handleExportLink = async () => {
