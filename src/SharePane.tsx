@@ -81,6 +81,35 @@ export function SharePane() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) {
+      console.error("Clipboard API failed:", e);
+    }
+    
+    // Fallback to document.execCommand('copy')
+    try {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(el);
+      if (success) return true;
+    } catch (err) {
+      console.error("execCommand Copy failed:", err);
+    }
+    
+    return false;
+  };
+
   const handleExportJPG = async () => {
     if (!exportRef.current) return;
     try {
@@ -88,13 +117,24 @@ export function SharePane() {
         backgroundColor: '#FAF6EE', 
         scale: 2,
         useCORS: true,
-        allowTaint: true
+        allowTaint: false
       });
       
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         const file = new File([blob], `ramen-${filterType}.png`, { type: 'image/png' });
         
+        const downloadFile = () => {
+          const link = document.createElement('a');
+          link.download = `ramen-${filterType}.png`;
+          const url = URL.createObjectURL(blob);
+          link.href = url;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 100);
+        };
+
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -102,17 +142,10 @@ export function SharePane() {
               title: '我的拉麵清單',
             });
           } catch (e) {
-            // Fallback to download
-            const link = document.createElement('a');
-            link.download = `ramen-${filterType}.png`;
-            link.href = URL.createObjectURL(blob);
-            link.click();
+            downloadFile();
           }
         } else {
-          const link = document.createElement('a');
-          link.download = `ramen-${filterType}.png`;
-          link.href = URL.createObjectURL(blob);
-          link.click();
+          downloadFile();
         }
       }, 'image/png');
       
@@ -148,7 +181,13 @@ export function SharePane() {
       const callbackName = 'isgd_cb_' + Math.floor(Math.random() * 1000000);
       const script = document.createElement('script');
       
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        resolve(url);
+      }, 3500);
+
       (window as any)[callbackName] = (data: any) => {
+        clearTimeout(timeoutId);
         cleanup();
         if (data && data.shorturl) {
           resolve(data.shorturl);
@@ -158,6 +197,7 @@ export function SharePane() {
       };
 
       script.onerror = () => {
+        clearTimeout(timeoutId);
         cleanup();
         resolve(url);
       };
@@ -219,8 +259,13 @@ export function SharePane() {
       }
       
       const shortUrl = await shrinkUrl(url);
-      navigator.clipboard.writeText(shortUrl);
-      showToast('已複製分享名片連結！');
+      const copied = await copyToClipboard(shortUrl);
+      if (copied) {
+        showToast('✅ 複製到連結！');
+      } else {
+        showToast('複製失敗，請手動複製網址');
+        window.prompt('請複製以下連結：', shortUrl);
+      }
     } catch (e) {
       showToast('產生連結失敗');
     }
@@ -241,8 +286,13 @@ export function SharePane() {
     } else {
       const url = `${window.location.origin}${window.location.pathname}?shareId=${user.uid}`;
       const shortUrl = await shrinkUrl(url);
-      navigator.clipboard.writeText(shortUrl);
-      showToast('已複製即時更新連結！');
+      const copied = await copyToClipboard(shortUrl);
+      if (copied) {
+        showToast('✅ 複製到連結！');
+      } else {
+        showToast('複製失敗，請手動複製網址');
+        window.prompt('請複製以下連結：', shortUrl);
+      }
     }
   };
 

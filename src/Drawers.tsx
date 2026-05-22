@@ -25,8 +25,21 @@ export function Drawers({
 
   useEffect(() => {
     if (drawer) {
-      setForm(payload || {});
-      setStars(payload?.rating || 0);
+      if (drawer === 'addVisit') {
+        setForm({
+          id: payload?.id,
+          shop: payload?.shop || '',
+          station: payload?.station || '',
+          style: payload?.style || '',
+          season: '',
+          item: '',
+          comment: ''
+        });
+        setStars(0);
+      } else {
+        setForm(payload || {});
+        setStars(payload?.rating || 0);
+      }
       setMrtOpen(false);
       setMrtLine(null);
     }
@@ -83,17 +96,27 @@ export function Drawers({
       } else if (drawer === 'addVisit') {
         const idx = visited.findIndex(v => v.id === form.id);
         if (idx > -1 && newVisit) {
-          if (!visited[idx].visits) visited[idx].visits = [];
-          visited[idx].visits.push(newVisit);
+          const card = visited[idx];
+          const updatedVisits = card.visits ? [...card.visits] : [];
+          updatedVisits.push(newVisit);
+          visited[idx] = {
+            ...card,
+            visits: updatedVisits
+          };
         }
       } else {
         // Adding new shop + initial visit
         const existIdx = visited.findIndex(x => x.shop.trim() === form.shop.trim() && (x.style === form.style || !x.style));
         if (existIdx > -1 && newVisit) {
-          if (!visited[existIdx].visits) visited[existIdx].visits = [];
-          visited[existIdx].visits.push(newVisit);
-          if (form.station) visited[existIdx].station = form.station;
-          if (form.style) visited[existIdx].style = form.style;
+          const card = visited[existIdx];
+          const updatedVisits = card.visits ? [...card.visits] : [];
+          updatedVisits.push(newVisit);
+          visited[existIdx] = {
+            ...card,
+            visits: updatedVisits,
+            station: form.station || card.station,
+            style: form.style || card.style
+          };
         } else if (newVisit) {
           visited.unshift({ id: uid(), shop: form.shop, style: form.style, station: form.station, visits: [newVisit], visitedAt: vDate });
         }
@@ -101,7 +124,7 @@ export function Drawers({
       return { ...prev, visited };
     });
     onClose();
-    showToast(form.id ? '✏️ 已更新！' : '✅ 加入已吃清單！');
+    showToast(drawer === 'addVisit' ? '✏️ 已更新！' : (form.id ? '✏️ 已更新！' : '✅ 加入已吃清單！'));
   };
 
   const confirmVisited = () => {
@@ -119,8 +142,13 @@ export function Drawers({
       
       const existIdx = visited.findIndex(x => x.shop === orig.shop);
       if (existIdx > -1) {
-         if (!visited[existIdx].visits) visited[existIdx].visits = [];
-         visited[existIdx].visits.push(newVisit);
+         const card = visited[existIdx];
+         const updatedVisits = card.visits ? [...card.visits] : [];
+         updatedVisits.push(newVisit);
+         visited[existIdx] = {
+           ...card,
+           visits: updatedVisits
+         };
       } else {
          visited.unshift({ ...orig, id: uid(), visits: [newVisit], visitedAt: new Date().toLocaleDateString('zh-TW') });
       }
@@ -136,9 +164,15 @@ export function Drawers({
       const visited = [...prev.visited];
       const cIdx = visited.findIndex(x => x.id === payload.cardId);
       if (cIdx > -1 && visited[cIdx].visits) {
-        visited[cIdx].visits[payload.visitIdx] = {
-           ...visited[cIdx].visits[payload.visitIdx],
+        const card = visited[cIdx];
+        const updatedVisits = [...card.visits!];
+        updatedVisits[payload.visitIdx] = {
+           ...updatedVisits[payload.visitIdx],
            item: form.item, style: form.style, season: form.season, comment: form.comment, rating: stars
+        };
+        visited[cIdx] = {
+          ...card,
+          visits: updatedVisits
         };
       }
       return { ...prev, visited };
@@ -210,7 +244,7 @@ export function Drawers({
           <div className="fg"><label className="flbl">店名 <span className="req">＊</span></label><input className="fi" value={form.shop || ''} onChange={e => update('shop', e.target.value)} disabled={drawer === 'addVisit'} /></div>
           <div className="fg"><label className="flbl">食用品項 <span className="req">＊</span></label><input className="fi" value={form.item || ''} onChange={e => update('item', e.target.value)} /></div>
           <div className="f2">
-            <div className="fg"><label className="flbl">湯系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)} disabled={drawer === 'addVisit'}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div className="fg"><label className="flbl">湯系</label><select className="fsel" value={form.style || ''} onChange={e => update('style', e.target.value)}><option value="">選擇</option>{state.styles.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
             <div className="fg"><label className="flbl">調味</label><select className="fsel" value={form.season || ''} onChange={e => update('season', e.target.value)}><option value="">選擇</option>{state.seasons.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
           </div>
           <div className="fg"><label className="flbl">捷運站</label><MrtSelector /></div>
