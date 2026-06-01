@@ -324,6 +324,54 @@ export function Drawers({
               <input className="fi" placeholder="新增調味..." value={form.newSeason || ''} onChange={e => update('newSeason', e.target.value)} />
               <button className="mbtn" onClick={() => { if(form.newSeason) { save(p => ({...p, seasons: [...p.seasons, form.newSeason]})); update('newSeason', ''); showToast('✅ 已新增！') } }}>＋ 新增</button>
            </div>
+           
+           <br/><br/>
+           <div className="mng-sec" style={{ borderTop: '2px dashed var(--gray)', paddingTop: '24px' }}>資料備份與傳輸</div>
+           <div style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px', lineHeight: '1.5' }}>
+             若您使用不同裝置或重新發佈，可將資料手動匯出及匯入。<br/>
+             👉 <b>進階技巧：</b>您也可以在「分享」頁面點擊「登入以開啟即時同步分享」，只要登入相同 Google 帳號，就會自動為您跨裝置/跨網址同步備份所有資料！
+           </div>
+           <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="sbtn" style={{ flex: 1, background: 'var(--gray)', color: 'var(--ink)', padding: '10px' }} onClick={() => {
+                const data = JSON.stringify(state);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ramen-backup-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                showToast('✅ 備份已下載！');
+              }}>⬇️ 匯出備份 (JSON)</button>
+              
+              <label className="sbtn" style={{ flex: 1, background: 'var(--ink)', color: 'var(--cream)', padding: '10px', textAlign: 'center', cursor: 'pointer' }}>
+                ⬆️ 匯入備份
+                <input type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => {
+                   const file = e.target.files?.[0];
+                   if (!file) return;
+                   const reader = new FileReader();
+                   reader.onload = (evt) => {
+                      try {
+                        const json = JSON.parse(evt.target?.result as string);
+                        if (json && typeof json === 'object') {
+                          if (!json.visited) json.visited = [];
+                          if (!json.wish) json.wish = [];
+                          if (!json.styles) json.styles = [];
+                          if (!json.seasons) json.seasons = [];
+                          
+                          if (window.confirm('確定要匯入覆蓋現有資料嗎？所有的拉麵紀錄將會被更新。')) {
+                            save(json);
+                            showToast('✅ 匯入成功！');
+                            setTimeout(() => window.location.reload(), 1000); // Reload to ensure changes propagate
+                          }
+                        }
+                      } catch (err) {
+                        showToast('❌ 檔案格式錯誤，只接受 JSON');
+                      }
+                   };
+                   reader.readAsText(file);
+                }} />
+              </label>
+           </div>
         </div>
       </div>
 

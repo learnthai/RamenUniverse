@@ -83,7 +83,7 @@ export function SharePane() {
 
   const copyToClipboard = async (text: string) => {
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
         return true;
       }
@@ -96,9 +96,11 @@ export function SharePane() {
       const el = document.createElement('textarea');
       el.value = text;
       el.setAttribute('readonly', '');
-      el.style.position = 'absolute';
+      el.style.position = 'fixed';
+      el.style.top = '0';
       el.style.left = '-9999px';
       document.body.appendChild(el);
+      el.focus();
       el.select();
       const success = document.execCommand('copy');
       document.body.removeChild(el);
@@ -177,6 +179,9 @@ export function SharePane() {
   };
 
   const shrinkUrl = (url: string): Promise<string> => {
+    if (url.length > 2500) {
+      return Promise.resolve(url);
+    }
     return new Promise((resolve) => {
       const callbackName = 'isgd_cb_' + Math.floor(Math.random() * 1000000);
       const script = document.createElement('script');
@@ -184,7 +189,7 @@ export function SharePane() {
       const timeoutId = setTimeout(() => {
         cleanup();
         resolve(url);
-      }, 3500);
+      }, 800);
 
       (window as any)[callbackName] = (data: any) => {
         clearTimeout(timeoutId);
