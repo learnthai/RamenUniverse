@@ -237,6 +237,100 @@ function parseMigrationData() {
   return { wishes, visits };
 }
 
+export function mergeAppStates(local: AppState, remote: AppState): AppState {
+  const cleanString = (s: any) => (typeof s === 'string' ? s.trim() : '');
+  
+  const mergeList = (localList: RamenCard[], remoteList: RamenCard[], isVisitedList: boolean) => {
+    const mergedMap = new Map<string, RamenCard>();
+    const getKey = (c: RamenCard) => cleanString(c.shop).toLowerCase();
+
+    // 1. Process all remote/incoming cards first
+    (remoteList || []).forEach(c => {
+      mergedMap.set(getKey(c), { ...c });
+    });
+
+    // 2. Merge local/existing cards
+    (localList || []).forEach(localCard => {
+      const key = getKey(localCard);
+      const remoteCard = mergedMap.get(key);
+
+      if (!remoteCard) {
+        mergedMap.set(key, { ...localCard });
+      } else {
+        const mergedCard: RamenCard = {
+          ...remoteCard,
+          id: localCard.id || remoteCard.id,
+          shop: localCard.shop || remoteCard.shop,
+          style: localCard.style || remoteCard.style,
+          season: localCard.season || remoteCard.season,
+          station: localCard.station || remoteCard.station,
+          comment: localCard.comment || remoteCard.comment,
+        };
+
+        if (isVisitedList) {
+          const mergedVisits = [...(remoteCard.visits || [])];
+          
+          (localCard.visits || []).forEach(localVisit => {
+            const matchIndex = mergedVisits.findIndex(remoteVisit => {
+              if (localVisit.id && remoteVisit.id && localVisit.id === remoteVisit.id) {
+                return true;
+              }
+              const localItem = cleanString(localVisit.item).toLowerCase();
+              const remoteItem = cleanString(remoteVisit.item).toLowerCase();
+              if (localItem && localItem === remoteItem) {
+                return true;
+              }
+              return false;
+            });
+
+            if (matchIndex >= 0) {
+              mergedVisits[matchIndex] = {
+                ...mergedVisits[matchIndex],
+                id: localVisit.id || mergedVisits[matchIndex].id,
+                item: localVisit.item || mergedVisits[matchIndex].item,
+                rating: localVisit.rating !== undefined ? Math.max(localVisit.rating, mergedVisits[matchIndex].rating || 0) : mergedVisits[matchIndex].rating,
+                comment: localVisit.comment || mergedVisits[matchIndex].comment,
+                style: localVisit.style || mergedVisits[matchIndex].style,
+                season: localVisit.season || mergedVisits[matchIndex].season,
+              };
+            } else {
+              mergedVisits.push({ ...localVisit });
+            }
+          });
+          
+          mergedCard.visits = mergedVisits;
+        }
+
+        mergedMap.set(key, mergedCard);
+      }
+    });
+
+    return Array.from(mergedMap.values());
+  };
+
+  const mergedWish = mergeList(local.wish || [], remote.wish || [], false);
+  const mergedVisited = mergeList(local.visited || [], remote.visited || [], true);
+
+  const mergedStyles = Array.from(new Set([
+    ...(local.styles || []),
+    ...(remote.styles || []),
+    ...defaultState.styles
+  ].filter(Boolean)));
+  
+  const mergedSeasons = Array.from(new Set([
+    ...(local.seasons || []),
+    ...(remote.seasons || []),
+    ...defaultState.seasons
+  ].filter(Boolean)));
+
+  return {
+    wish: mergedWish,
+    visited: mergedVisited,
+    styles: mergedStyles,
+    seasons: mergedSeasons,
+  };
+}
+
 export const useStore = () => {
   const [state, setState] = useState<AppState>(defaultState);
   const [loaded, setLoaded] = useState(false);
@@ -329,9 +423,13 @@ export const useStore = () => {
       
       const migrated13 = localStorage.getItem('migrated_v13_explicit');
       if (!migrated13) {
-        currentState.visited = (explicitVisits as any).map(normalizeCard);
-        currentState.styles = defaultState.styles;
-        currentState.seasons = defaultState.seasons;
+        const parsedVisits = (explicitVisits as any).map(normalizeCard);
+        currentState = mergeAppStates(currentState, {
+          wish: [],
+          visited: parsedVisits,
+          styles: defaultState.styles,
+          seasons: defaultState.seasons
+        });
         localStorage.setItem('migrated_v13_explicit', '1');
         localStorage.setItem(SK, JSON.stringify(currentState));
       }
@@ -475,8 +573,30 @@ export const useStore = () => {
             styles: data.styles || defaultState.styles,
             seasons: data.seasons || defaultState.seasons
           };
-          setState(freshState);
-          localStorage.setItem(SK, JSON.stringify(freshState));
+          setState((prev) => {
+            const merged = mergeAppStates(prev, freshState);
+            localStorage.setItem(SK, JSON.stringify(merged));
+
+            // Sync any local-only extra data back to Firestore
+            const localHasMore = JSON.stringify(merged) !== JSON.stringify(freshState);
+            if (localHasMore && auth.currentUser) {
+              remoteUpdateRef.current = true;
+              setDoc(doc(db, 'user_lists', auth.currentUser.uid), {
+                userId: auth.currentUser.uid,
+                wish: merged.wish,
+                visited: merged.visited,
+                styles: merged.styles,
+                seasons: merged.seasons,
+                updatedAt: Date.now().toString()
+              }).then(() => {
+                remoteUpdateRef.current = false;
+              }).catch(err => {
+                remoteUpdateRef.current = false;
+                console.error('Failed auto-sync back details:', err);
+              });
+            }
+            return merged;
+          });
         }
       } else {
         // Init remote database with local
