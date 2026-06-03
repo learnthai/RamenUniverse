@@ -82,16 +82,9 @@ export function SharePane() {
   };
 
   const copyToClipboard = async (text: string) => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (e) {
-      console.error("Clipboard API failed:", e);
-    }
+    let success = false;
     
-    // Fallback to document.execCommand('copy')
+    // Fallback to document.execCommand('copy') synchronously if possible
     try {
       const el = document.createElement('textarea');
       el.value = text;
@@ -100,17 +93,28 @@ export function SharePane() {
       el.style.top = '0';
       el.style.left = '-9999px';
       document.body.appendChild(el);
-      el.focus();
+      // Removed focus() to not break context, just select
       el.select();
-      const success = document.execCommand('copy');
+      success = document.execCommand('copy');
       document.body.removeChild(el);
-      if (success) return true;
     } catch (err) {
       console.error("execCommand Copy failed:", err);
     }
     
+    if (success) return true;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) {
+      console.error("Clipboard API failed:", e);
+    }
+    
     return false;
   };
+
 
   const handleExportJPG = async () => {
     if (!exportRef.current) return;
@@ -178,7 +182,24 @@ export function SharePane() {
     }
   };
 
-  const shrinkUrl = (url: string): Promise<string> => {
+  const shrinkUrl = async (url: string): Promise<string> => {
+    try {
+      const res = await fetch('https://spoo.me/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        },
+        body: new URLSearchParams({ url })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.short_url) return data.short_url;
+      }
+    } catch (e) {
+      console.warn('spoo.me failed, falling back...');
+    }
+
     if (url.length > 2500) {
       return Promise.resolve(url);
     }
@@ -189,7 +210,7 @@ export function SharePane() {
       const timeoutId = setTimeout(() => {
         cleanup();
         resolve(url);
-      }, 800);
+      }, 1500);
 
       (window as any)[callbackName] = (data: any) => {
         clearTimeout(timeoutId);
