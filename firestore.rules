@@ -30,10 +30,9 @@ service cloud.firestore {
         isSignedIn() && 
         isOwner(userId) && 
         isValidId(userId) && 
-        isValidUserList(incoming()) && 
-        incoming().userId == existing().userId &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['wish', 'visited', 'styles', 'seasons', 'updatedAt'])
+        isValidUserList(incoming())
       );
+
       allow delete: if isSignedIn() && isOwner(userId) && isValidId(userId);
     }
   }

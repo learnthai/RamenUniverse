@@ -20,7 +20,6 @@ export function ShareViewer({ dataString, onClose }: { dataString: string; onClo
       setData(decoded);
     } catch (e) {
       console.error(e);
-      alert('無效的分享連結或連結已損毀');
       onClose();
     }
   }, [dataString, onClose]);
@@ -44,11 +43,12 @@ export function ShareViewer({ dataString, onClose }: { dataString: string; onClo
             ← 返回清單 (唯讀模式)
           </a>
         ) : (
-          <a href={window.location.href} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 30, fontWeight: 'bold', cursor: 'pointer', fontSize: 16, boxShadow: 'var(--shadow-sm)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-            ← 返回清單 (唯讀模式)
-          </a>
+          <button onClick={onClose} style={{ background: 'var(--ink)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 30, fontWeight: 'bold', cursor: 'pointer', fontSize: 16, boxShadow: 'var(--shadow-sm)', display: 'inline-flex', alignItems: 'center' }}>
+            ← 返回清單
+          </button>
         )}
       </div>
+
 
       <h1 style={{ fontSize: 24, margin: '0 0 8px', borderBottom: '3px solid #1a1a1a', paddingBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ color: '#d92c2c' }}>🍜</span> 

@@ -86,11 +86,15 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
     }
   };
 
-  const Stars = ({ num }: { num: number }) => (
-    <div className="ve-stars">
-      {[1,2,3,4,5].map(i => <span key={i} className={`ve-star ${i <= num ? 'on' : ''}`}>{i <= num ? '★' : '☆'}</span>)}
-    </div>
-  );
+  const Stars = ({ num }: { num: number }) => {
+    const safeNum = typeof num === 'number' && !isNaN(num) ? num : 0;
+    return (
+      <div className="ve-stars">
+        {[1,2,3,4,5].map(i => <span key={i} className={`ve-star ${i <= safeNum ? 'on' : ''}`}>{i <= safeNum ? '★' : '☆'}</span>)}
+      </div>
+    );
+  };
+
 
   const getMrtColor = (sta: string) => {
     if (!sta) return null;
@@ -181,9 +185,11 @@ export function VisitedPane({ visited, onAddVisit, onEditCard, onDelCard, onEdit
           </div>
           <div className="grid-area">
             {items.map(c => {
-              const visits = c.visits && c.visits.length > 0 ? c.visits : [{ item: c.item || '', rating: c.rating || 0, comment: c.comment || '', season: c.season || '', style: c.style || '', id: c.id }];
+              const rawVisits = c.visits && c.visits.length > 0 ? c.visits : [{ item: c.item || '', rating: c.rating || 0, comment: c.comment || '', season: c.season || '', style: c.style || '', id: c.id }];
+              const visits = (rawVisits || []).filter(Boolean);
               return (
                 <div key={c.id} className="card visited">
+
                   <div className="cbody">
                     <div className="crow-top">
                       <span className="ccheck" style={{cursor: 'default'}}><ICONS.CircleFilled /></span>

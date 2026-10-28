@@ -158,7 +158,7 @@ export function SharePane() {
       showToast('📸 圖片產生成功！');
     } catch (err) {
       console.error(err);
-      alert('匯出圖片失敗');
+      showToast('⚠️ 匯出圖片失敗');
     }
   };
 
@@ -178,9 +178,10 @@ export function SharePane() {
       pdf.save(`ramen-${filterType}.pdf`);
     } catch (err) {
       console.error(err);
-      alert('匯出PDF失敗');
+      showToast('⚠️ 匯出PDF失敗');
     }
   };
+
 
   const shrinkUrl = async (url: string): Promise<string> => {
     try {
@@ -289,11 +290,10 @@ export function SharePane() {
       if (copied) {
         showToast('✅ 複製到連結！');
       } else {
-        showToast('複製失敗，請手動複製網址');
-        window.prompt('請複製以下連結：', shortUrl);
+        showToast('🔗 已產生短網址：' + shortUrl);
       }
     } catch (e) {
-      showToast('產生連結失敗');
+      showToast('⚠️ 產生連結失敗');
     }
   };
 
@@ -302,11 +302,10 @@ export function SharePane() {
       const provider = new GoogleAuthProvider();
       try {
         await signInWithPopup(auth, provider);
-        // On success, we just let the effect sync it up
         showToast('登入成功！此清單已備份至雲端。');
       } catch (err) {
         console.error(err);
-        showToast('登入失敗');
+        showToast('⚠️ 登入失敗');
         return;
       }
     } else {
@@ -316,11 +315,11 @@ export function SharePane() {
       if (copied) {
         showToast('✅ 複製到連結！');
       } else {
-        showToast('複製失敗，請手動複製網址');
-        window.prompt('請複製以下連結：', shortUrl);
+        showToast('🔗 專用同步短網址：' + shortUrl);
       }
     }
   };
+
 
   return (
     <div className="pane on" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

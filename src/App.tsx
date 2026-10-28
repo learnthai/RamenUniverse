@@ -29,7 +29,23 @@ export default function App() {
   
   const [confirmDialog, setConfirmDialog] = useState<{msg: string, action: string, payload?: any} | null>(null);
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--cream, #FAF6EE)',
+        color: 'var(--ink, #2A2218)'
+      }}>
+        <div style={{ fontSize: 36, animation: 'wiggle 2s ease-in-out infinite' }}>🍜</div>
+        <div style={{ marginTop: 12, fontWeight: 700, fontSize: 13, color: 'var(--ink-soft, rgba(42,34,24,.5))' }}>載入中...</div>
+      </div>
+    );
+  }
+
 
   const openDrawer = (name: string, payload?: any) => {
     if (readOnly) return; // Disallow opening edit drawers

@@ -242,16 +242,18 @@ export function mergeAppStates(local: AppState, remote: AppState): AppState {
   
   const mergeList = (localList: RamenCard[], remoteList: RamenCard[], isVisitedList: boolean) => {
     const mergedMap = new Map<string, RamenCard>();
-    const getKey = (c: RamenCard) => cleanString(c.shop).toLowerCase();
+    const getKey = (c: RamenCard) => cleanString(c?.shop).toLowerCase();
 
     // 1. Process all remote/incoming cards first
-    (remoteList || []).forEach(c => {
-      mergedMap.set(getKey(c), { ...c });
+    (remoteList || []).filter(Boolean).forEach(c => {
+      const k = getKey(c);
+      if (k) mergedMap.set(k, { ...c });
     });
 
     // 2. Merge local/existing cards
-    (localList || []).forEach(localCard => {
+    (localList || []).filter(Boolean).forEach(localCard => {
       const key = getKey(localCard);
+      if (!key) return;
       const remoteCard = mergedMap.get(key);
 
       if (!remoteCard) {
@@ -268,9 +270,9 @@ export function mergeAppStates(local: AppState, remote: AppState): AppState {
         };
 
         if (isVisitedList) {
-          const mergedVisits = [...(remoteCard.visits || [])];
+          const mergedVisits = [...(remoteCard.visits || []).filter(Boolean)];
           
-          (localCard.visits || []).forEach(localVisit => {
+          (localCard.visits || []).filter(Boolean).forEach(localVisit => {
             const matchIndex = mergedVisits.findIndex(remoteVisit => {
               if (localVisit.id && remoteVisit.id && localVisit.id === remoteVisit.id) {
                 return true;
@@ -308,6 +310,7 @@ export function mergeAppStates(local: AppState, remote: AppState): AppState {
     return Array.from(mergedMap.values());
   };
 
+
   const mergedWish = mergeList(local.wish || [], remote.wish || [], false);
   const mergedVisited = mergeList(local.visited || [], remote.visited || [], true);
 
@@ -337,7 +340,8 @@ export const useStore = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isFirebaseSyncing, setIsFirebaseSyncing] = useState(false);
   const [readOnly, setReadOnly] = useState(false);
-  const remoteUpdateRef = useRef(false);
+  const lastProcessedRemoteUpdatedAt = useRef<string>('');
+  const initDoneRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -345,21 +349,31 @@ export const useStore = () => {
 
     if (shareId) {
       setReadOnly(true);
+      const timer = setTimeout(() => setLoaded(true), 3000);
       const ref = doc(db, 'user_lists', shareId);
       const unsub = onSnapshot(ref, (snap) => {
+        clearTimeout(timer);
         if (snap.exists()) {
            const data = snap.data();
            setState({
-             wish: data.wish || [],
-             visited: data.visited || [],
+             wish: (data.wish || []).map(normalizeCard),
+             visited: (data.visited || []).map(normalizeCard),
              styles: data.styles || defaultState.styles,
              seasons: data.seasons || defaultState.seasons
            });
         }
         setLoaded(true);
+      }, (error) => {
+        clearTimeout(timer);
+        console.error('Snapshot error for shareId:', error);
+        setLoaded(true);
       });
-      return () => unsub();
+      return () => {
+        clearTimeout(timer);
+        unsub();
+      };
     }
+
 
     try {
       let currentState = defaultState;
@@ -564,61 +578,54 @@ export const useStore = () => {
     setIsFirebaseSyncing(true);
 
     const unsub = onSnapshot(ref, (snap) => {
+      // Ignore local uncommitted writes
+      if (snap.metadata.hasPendingWrites) return;
+
       if (snap.exists()) {
         const data = snap.data();
-        if (data && data.updatedAt && !remoteUpdateRef.current) {
+        if (data && data.updatedAt) {
+          // If we already processed this remote update, avoid duplicate state work
+          if (data.updatedAt === lastProcessedRemoteUpdatedAt.current) {
+            return;
+          }
+          lastProcessedRemoteUpdatedAt.current = data.updatedAt;
+
           const freshState: AppState = {
-            wish: data.wish || [],
-            visited: data.visited || [],
+            wish: (data.wish || []).map(normalizeCard),
+            visited: (data.visited || []).map(normalizeCard),
             styles: data.styles || defaultState.styles,
             seasons: data.seasons || defaultState.seasons
           };
+
           setState((prev) => {
             const merged = mergeAppStates(prev, freshState);
-            localStorage.setItem(SK, JSON.stringify(merged));
-
-            // Sync any local-only extra data back to Firestore
-            const localHasMore = JSON.stringify(merged) !== JSON.stringify(freshState);
-            if (localHasMore && auth.currentUser) {
-              remoteUpdateRef.current = true;
-              setDoc(doc(db, 'user_lists', auth.currentUser.uid), {
-                userId: auth.currentUser.uid,
-                wish: merged.wish,
-                visited: merged.visited,
-                styles: merged.styles,
-                seasons: merged.seasons,
-                updatedAt: Date.now().toString()
-              }).then(() => {
-                remoteUpdateRef.current = false;
-              }).catch(err => {
-                remoteUpdateRef.current = false;
-                console.error('Failed auto-sync back details:', err);
-              });
-            }
+            try {
+              localStorage.setItem(SK, JSON.stringify(merged));
+            } catch (e) {}
             return merged;
           });
         }
       } else {
-        // Init remote database with local
+        // Init remote database with local if remote doc doesn't exist yet
+        if (initDoneRef.current) return;
+        initDoneRef.current = true;
         const local = localStorage.getItem(SK);
-        if (local) {
-          const st = JSON.parse(local);
-          remoteUpdateRef.current = true;
-          setDoc(doc(db, 'user_lists', user.uid), {
-            userId: user.uid,
-            wish: st.wish || [],
-            visited: st.visited || [],
-            styles: st.styles || defaultState.styles,
-            seasons: st.seasons || defaultState.seasons,
-            updatedAt: Date.now().toString()
-          }).then(() => {
-            remoteUpdateRef.current = false;
-          }).catch(err => {
-            remoteUpdateRef.current = false;
-            console.error('Failed init:', err);
-          });
-        }
+        const st = local ? JSON.parse(local) : defaultState;
+        const now = Date.now().toString();
+        lastProcessedRemoteUpdatedAt.current = now;
+        setDoc(doc(db, 'user_lists', user.uid), {
+          userId: user.uid,
+          wish: st.wish || [],
+          visited: st.visited || [],
+          styles: st.styles || defaultState.styles,
+          seasons: st.seasons || defaultState.seasons,
+          updatedAt: now
+        }).catch(err => {
+          console.error('Failed init:', err);
+        });
       }
+    }, (err) => {
+      console.error('Firebase snapshot listener error:', err);
     });
 
     return () => unsub();
@@ -636,21 +643,21 @@ export const useStore = () => {
         visited: (computed.visited || []).map(normalizeCard)
       };
       
-      localStorage.setItem(SK, JSON.stringify(finalState));
+      try {
+        localStorage.setItem(SK, JSON.stringify(finalState));
+      } catch (e) {}
       
       if (auth.currentUser) {
-        remoteUpdateRef.current = true;
+        const now = Date.now().toString();
+        lastProcessedRemoteUpdatedAt.current = now;
         setDoc(doc(db, 'user_lists', auth.currentUser.uid), {
           userId: auth.currentUser.uid,
           wish: finalState.wish,
           visited: finalState.visited,
           styles: finalState.styles,
           seasons: finalState.seasons,
-          updatedAt: Date.now().toString()
-        }).then(() => {
-          remoteUpdateRef.current = false;
+          updatedAt: now
         }).catch(err => {
-          remoteUpdateRef.current = false;
           console.error('Firebase save error:', err);
         });
       }
@@ -661,3 +668,4 @@ export const useStore = () => {
 
   return { state, save, loaded, user, isFirebaseSyncing, readOnly };
 };
+

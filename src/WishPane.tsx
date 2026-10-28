@@ -43,7 +43,69 @@ export function WishPane({ wish, save, onEdit, onDel, onCheck, readOnly }: WishP
 
   React.useEffect(() => {
     const container = listRef.current;
-    if (!container) return;
+    if (!container || readOnly) return;
+
+    let activePointerId: number | null = null;
+
+    function cleanupListeners() {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onCancel);
+    }
+
+    function onMove(ev: PointerEvent) {
+      if (draggingId.current === null) return;
+      ev.preventDefault();
+
+      const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+      const targetCard = els.find(
+        el => el.classList.contains('wish-card') && el.getAttribute('data-id') !== draggingId.current
+      );
+      const overId = targetCard?.getAttribute('data-id') ?? null;
+      if (overId !== dragOverId.current) {
+        dragOverId.current = overId;
+        setDragState(prev => ({ ...prev, over: overId }));
+      }
+    }
+
+    function finishDrag(applyChange: boolean) {
+      const from = draggingId.current;
+      const over = dragOverId.current;
+
+      draggingId.current = null;
+      dragOverId.current = null;
+      activePointerId = null;
+      setDragState({ from: null, over: null });
+      cleanupListeners();
+
+      if (applyChange && from && over && from !== over) {
+        save((prev: any) => {
+          const newList = [...(prev.wish || [])];
+          const sIdx = newList.findIndex((x: any) => x.id === from);
+          if (sIdx === -1) return prev;
+          
+          const [moved] = newList.splice(sIdx, 1);
+          const tIdx = newList.findIndex((x: any) => x.id === over);
+          
+          if (tIdx !== -1) {
+            newList.splice(tIdx, 0, moved);
+          } else {
+            newList.splice(sIdx, 0, moved);
+            return prev;
+          }
+          
+          return { ...prev, wish: newList };
+        });
+      }
+    }
+
+    function onUp() {
+      finishDrag(true);
+    }
+
+    function onCancel() {
+      finishDrag(false);
+    }
 
     function onPointerDown(e: PointerEvent) {
       const target = e.target as HTMLElement;
@@ -56,107 +118,24 @@ export function WishPane({ wish, save, onEdit, onDel, onCheck, readOnly }: WishP
       const id = card.getAttribute('data-id');
       if (!id) return;
 
-      // Crucial: Prevent default to stop scrolling
       e.preventDefault();
-
+      activePointerId = e.pointerId;
       draggingId.current = id;
+      dragOverId.current = null;
       setDragState({ from: id, over: null });
-
-      // Visual feedback: pin the dragged card to the pointer
-      const rect = card.getBoundingClientRect();
-      const startY = e.clientY;
-      const startTop = rect.top;
-
-      // Insert placeholder to keep layout stable
-      const placeholder = document.createElement('div');
-      placeholder.style.height = rect.height + 'px';
-      placeholder.style.marginBottom = '11px';
-      placeholder.id = 'drag-placeholder';
-      card.parentNode?.insertBefore(placeholder, card);
-
-      card.style.position = 'fixed';
-      card.style.top = rect.top + 'px';
-      card.style.left = rect.left + 'px';
-      card.style.width = rect.width + 'px';
-      card.style.zIndex = '999';
-      card.style.opacity = '0.75';
-      card.style.pointerEvents = 'none';
-      card.style.transition = 'none';
-
-      function onMove(ev: PointerEvent) {
-        ev.preventDefault();
-        const dy = ev.clientY - startY;
-        if (card) card.style.top = (startTop + dy) + 'px';
-
-        const els = document.elementsFromPoint(ev.clientX, ev.clientY);
-        const targetCard = els.find(
-          el => el.classList.contains('wish-card') && el.getAttribute('data-id') !== id
-        );
-        const overId = targetCard?.getAttribute('data-id') ?? null;
-        if (overId !== dragOverId.current) {
-          dragOverId.current = overId;
-          setDragState({ from: id, over: overId });
-        }
-      }
-
-      function onUp() {
-        const from = draggingId.current;
-        const over = dragOverId.current;
-
-        // Query live DOM for the card since it might have been re-rendered or we need a fresh ref
-        const liveCard = container?.querySelector(`.wish-card[data-id="${id}"]`) as HTMLElement | null;
-        if (liveCard) {
-          liveCard.style.position = '';
-          liveCard.style.top = '';
-          liveCard.style.left = '';
-          liveCard.style.width = '';
-          liveCard.style.zIndex = '';
-          liveCard.style.opacity = '';
-          liveCard.style.pointerEvents = '';
-          liveCard.style.transition = '';
-        }
-        
-        // Remove placeholder
-        document.getElementById('drag-placeholder')?.remove();
-
-        draggingId.current = null;
-        dragOverId.current = null;
-        setDragState({ from: null, over: null });
-
-        if (from && over && from !== over) {
-          save((prev: any) => {
-            const newList = [...prev.wish];
-            const sIdx = newList.findIndex((x: any) => x.id === from);
-            if (sIdx === -1) return prev;
-            
-            const [moved] = newList.splice(sIdx, 1);
-            const tIdx = newList.findIndex((x: any) => x.id === over);
-            
-            if (tIdx !== -1) {
-              newList.splice(tIdx, 0, moved);
-            } else {
-              // Fallback: if over item not found (unlikely), just put at end or keep original
-              newList.splice(sIdx, 0, moved);
-              return prev;
-            }
-            
-            return { ...prev, wish: newList };
-          });
-        }
-
-        document.removeEventListener('pointermove', onMove);
-        document.removeEventListener('pointerup', onUp);
-      }
 
       document.addEventListener('pointermove', onMove, { passive: false });
       document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onCancel);
     }
 
     container.addEventListener('pointerdown', onPointerDown, { passive: false });
     return () => {
       container.removeEventListener('pointerdown', onPointerDown);
+      cleanupListeners();
     };
-  }, [save]);
+  }, [save, readOnly]);
+
 
   const filterLabels: Record<string, string> = {
     station: '捷運站',
