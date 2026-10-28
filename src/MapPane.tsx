@@ -136,7 +136,14 @@ export const MapPane = () => {
                 contentStyle={{ width: '100%', height: '100%' }}
               >
                 <svg viewBox="0 0 580 580" width="100%" height="100%" preserveAspectRatio="xMinYMin meet" style={{ background: '#f0efe8' }} className="w-full h-full block" onClick={() => !hoveredStation && setClickedStation(null)}>
-                  <image width="3000" height="3000" transform="scale(0.19333)" href="https://cdn.phototourl.com/free/2026-05-05-8f3ccc54-e909-4054-b570-7358d778c9a5.jpg" />
+                  <image 
+                    width="580" 
+                    height="580" 
+                    x="0" 
+                    y="0" 
+                    href="/mrt_map.png" 
+                    xlinkHref="/mrt_map.png" 
+                  />
                   
                   <g id="Nodes" style={{ cursor: 'pointer' }}>
                     {renderStation('O11_R13', 'M233.13,243.41h-12.24c-1.69,0-3.06,1.35-3.06,3.02v5.58c0,1.66,1.37,3.02,3.06,3.02h12.24c1.69,0,3.06-1.36,3.06-3.02v-5.58c0-1.67-1.37-3.02-3.06-3.02')}
